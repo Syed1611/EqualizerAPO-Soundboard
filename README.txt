@@ -1,47 +1,50 @@
-APO Soundboard v0.5 x64 - test build
-====================================
+APO Soundboard v0.6 x64
+=======================
 
-This build is based directly on the working v0.2 architecture.
-There is no installer. Keep these two files in the same folder:
+This is a focused update to the working v0.5 / v0.2-style architecture.
+No installer is included.
 
-  APOSoundboard_v0.5.dll
+Keep these two files together:
+  APOSoundboard_v0.6.dll
   APOSoundboardController.exe
 
-In Equalizer APO, add APOSoundboard_v0.5.dll as the VST plugin.
-Open Panel launches APOSoundboardController.exe, just like v0.2.
+In Equalizer APO, use APOSoundboard_v0.6.dll as the VST plugin.
+Open Panel launches APOSoundboardController.exe.
 
-Changes from v0.2
------------------
-1. Pitch
-   - Pitch - / Pitch + buttons change the selected pad by 1 semitone.
-   - Range: -24 to +24 semitones.
-   - This is sampler-style pitch, so pitch also changes playback speed/length.
+Changes in v0.6
+---------------
+1. Correct pad click behavior
+   - Single-click: select the pad only.
+   - Double-click: play that pad.
+   - Playback uses the highlighted waveform range.
+   - Empty pads no longer open the file dialog just from a single-click;
+     select the pad, then use Load / Replace Audio.
 
-2. Selectable waveform playback
-   - The selected pad's waveform is shown below the pad grid.
-   - Drag across the waveform to highlight the playback region.
-   - Pad clicks and global hotkeys play only the highlighted region.
-   - Double-click the waveform, or click Full Range, to restore the full sample.
-   - The selected region is saved per pad.
+2. Volume drag control
+   - Drag horizontally to set 0% to 200%.
+   - The selected-pad text shows the exact percentage.
+   - Double-click the Volume bar to reset to 100%.
 
-3. More audio formats
-   - WAV decoding remains built in.
-   - The controller also tries Windows Media Foundation for other formats.
-   - The file picker includes: WAV, MP3, FLAC, M4A, AAC, and WMA.
-   - Actual non-WAV format availability depends on the Media Foundation codecs
-     installed in Windows. MP3/AAC/WMA are normally available on standard
-     Windows 10/11 installs; FLAC support depends on the Windows installation.
+3. Pitch drag control
+   - Drag horizontally to set -24 to +24 semitones.
+   - The selected-pad text shows the exact semitone value.
+   - Double-click the Pitch bar to reset to 0 semitones.
+   - Pitch remains sampler-style: changing pitch also changes playback speed.
 
-Compatibility / settings
-------------------------
-- Existing v0.2 config.bin settings are imported automatically on first run.
-- v0.5 saves its extended settings separately as config_v05.bin, so the old
-  v0.2 config file is not overwritten.
-- The VST/controller named-pipe architecture and microphone mixing path are
-  the same design as v0.2.
+4. Existing waveform + multi-format behavior retained
+   - Drag over the waveform to select the playback range.
+   - Double-click the waveform, or press Full Range, to restore the full sample.
+   - WAV is built in; Windows Media Foundation is used for other supported
+     formats such as MP3, FLAC, M4A/AAC and WMA where Windows can decode them.
+
+Settings
+--------
+- v0.6 intentionally uses the same config_v05.bin format as v0.5 because no
+  saved-data fields changed. Your v0.5 pad assignments, volume, pitch,
+  waveform ranges and hotkeys should carry over directly.
 
 Important
 ---------
-This binary was cross-compiled and statically checked as x86-64 Windows PE.
+This build was cross-compiled and statically checked as x86-64 Windows PE.
 It cannot be runtime-tested inside Equalizer APO from the build environment.
-Treat it as a test build and keep your known-working v0.2 files available.
+Keep your known-working v0.5 files until you confirm v0.6 on your PC.
