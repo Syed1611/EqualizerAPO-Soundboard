@@ -1,25 +1,40 @@
-APO Soundboard v0.6.1 x64 - Stability Audit Build
-==================================================
+APO Soundboard v0.6.2 x64
+========================
 
-This is v0.6 behavior/UI with stability hardening only. No installer.
-Keep APOSoundboard_v0.6.1.dll and APOSoundboardController.exe together.
+This keeps the working v0.6/v0.6.1 soundboard behavior and UI. No installer.
+Keep APOSoundboard_v0.6.2.dll and APOSoundboardController.exe in the same folder.
 
-Stability changes:
-- VST pipe thread must stop before the VST instance can be freed (prevents use-after-free).
-- Media Foundation and COM are shut down cleanly when the controller exits.
-- The single-instance mutex is closed cleanly.
-- Worker threads no longer call GUI SetWindowText directly; connection UI updates are posted to the UI thread.
-- Decoded sample RAM is bounded to 128 MiB per pad and 512 MiB total to prevent runaway memory pressure from long files.
-- Idle pipe polling is reduced slightly to lower wakeups/CPU use.
-- Same config_v05.bin format and same v0.6 controls/behavior.
+New in v0.6.2
+-------------
+- Hotkey conflict warnings:
+  * If another pad already uses the shortcut, the warning names that pad.
+  * If Windows/another application rejects the shortcut, the previous hotkey is restored.
+  * Saved hotkeys that cannot register are marked [CONFLICT] on the affected pad.
+- Built-in diagnostics at the bottom of the controller, updated once per second:
+  RAM, decoded-sample RAM, CPU, process handle count, thread count, GDI objects,
+  USER objects, VST connections, hotkey conflicts, config-backup status and uptime.
+- Automatic config backup/recovery:
+  * Config writes go to a temporary file first and are replaced atomically.
+  * The previous known-good config is kept as config_v05.bin.bak.
+  * New saves include a CRC check.
+  * If the main config is damaged/truncated, the backup is loaded automatically.
 
-Security/static audit notes:
-- No networking APIs.
-- No registry writes or startup persistence.
-- No process injection, remote-thread, credential, or downloader code.
-- UI uses Win32/GDI only; no Direct3D/OpenGL/Vulkan GPU path.
-- The binaries use a tiny dynamic Win32 API resolver, so their PE import table is intentionally empty.
-  This is unusual but comes from the included source/build method, not from packed/encrypted payloads.
+Existing v0.6.1 stability hardening is retained:
+- Safe VST worker-thread shutdown.
+- Clean Media Foundation / COM shutdown.
+- Bounded decoded sample RAM: 128 MiB per pad, 512 MiB total.
+- No cross-thread UI text updates.
+- GDI resources and handles are explicitly cleaned up.
 
-This build was cross-compiled and statically checked, but cannot be runtime-tested
-inside Equalizer APO in the build environment.
+Configuration compatibility
+---------------------------
+The controller still uses %LOCALAPPDATA%\APOSoundboard\config_v05.bin and can read
+existing v0.5/v0.6/v0.6.1 settings. v0.6.2 upgrades future saves to a checksummed
+version of that same config file. The backup is stored alongside it as
+config_v05.bin.bak.
+
+Runtime note
+------------
+This build was cross-compiled and statically checked, but cannot be executed inside
+Equalizer APO in the build environment. Keep your previous working build until you
+have verified v0.6.2 on your Windows system.

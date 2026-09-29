@@ -1,58 +1,48 @@
-APO Soundboard v0.6.1 Stability / Security Audit
-================================================
+APO Soundboard v0.6.2 Build / Stability Notes
+=============================================
 
-Audited baseline: v0.6 source + binaries.
+Baseline: v0.6.1.
 
-Fixed in v0.6.1:
-- VST shutdown could free the plugin object after a 1.5 s timeout even if the pipe
-  worker had not exited. That was a use-after-free risk. v0.6.1 waits longer and
-  refuses to free the instance if the worker does not stop safely.
-- Media Foundation / COM startup was process-lifetime only in v0.6. v0.6.1 resolves
-  and calls MFShutdown / CoUninitialize and unloads the decoder DLLs on clean exit.
-- The controller single-instance mutex handle is now closed on clean exit.
-- Pipe worker threads now post connection-status changes to the UI thread instead
-  of calling SetWindowText across threads.
-- Decoded sample memory is capped at 128 MiB per pad and 512 MiB total. Long
-  compressed files are otherwise fully decoded to float PCM and can consume a lot
-  of RAM even without a true leak.
-- Idle pipe polling was reduced from 2 ms to 5 ms while the ring buffer is full.
+Added in v0.6.2:
+- Hotkey conflict detection for duplicate pad shortcuts before registration.
+- Separate warning when RegisterHotKey is rejected by Windows/another application.
+- Conflicted saved pads are visibly marked [CONFLICT].
+- Passive diagnostics updated once per second using standard process counters.
+- Diagnostics snapshot handles are closed on every update and the UI timer is killed
+  during WM_DESTROY.
+- Atomic config saves: write + flush temporary file, backup prior known-good config,
+  then MoveFileExW with replace/write-through.
+- CRC32 on v3 config saves; v2 configs remain readable.
+- Automatic fallback to config_v05.bin.bak when the primary v2/v3 config is invalid.
 
-Reviewed and found bounded / paired:
-- WAV file handles are closed on all reviewed paths.
-- Media Foundation reader/media-type/sample/buffer COM objects are released.
-- Replacing a pad frees the previous decoded sample buffer.
-- GDI brushes/pens are created once and DeleteObject is called at WM_DESTROY.
-- BeginPaint/EndPaint and SelectObject restore are paired.
-- Named pipe handles and client allocations are released when clients disconnect.
-- VST ring-buffer worker allocation is freed when the worker exits.
+Retained v0.6.1 stability fixes:
+- VST instance is not freed while its worker thread can still reference it.
+- Media Foundation / COM are shut down cleanly.
+- Single-instance mutex is closed.
+- Pipe workers post UI updates to the UI thread.
+- Decoded sample RAM caps: 128 MiB per pad / 512 MiB total.
+- GDI brushes/pens are created once and deleted at shutdown.
+- Named pipe and file handles are closed on reviewed paths.
 
 GPU:
-- There is no Direct3D, OpenGL, Vulkan, Direct2D, or GPU-compute code. The UI uses
-  classic Win32/GDI drawing. A GPU-memory leak is therefore not indicated by this
-  source.
+- No Direct3D, Direct2D, OpenGL, Vulkan or GPU-compute path. UI rendering is classic
+  Win32/GDI.
 
 Security review:
-- No networking APIs or sockets.
-- No HTTP/download code.
-- No registry writes.
-- No startup persistence/service/task creation.
-- No process injection, WriteProcessMemory, VirtualAllocEx, CreateRemoteThread,
-  credential access, or keystroke logging. Global hotkeys use RegisterHotKey only.
-- ShellExecuteW is used only by the VST panel to launch the companion controller
-  from the same directory.
-- Audio files are read locally; non-WAV formats are decoded through Windows Media
-  Foundation.
+- No network/socket/HTTP/downloader code.
+- No registry writes, service/task/startup persistence.
+- No process injection, remote-thread, credential-access or keylogging code.
+- Global shortcuts use RegisterHotKey only.
+- ShellExecuteW is used by the VST panel only to launch the companion controller in
+  the same directory.
 
-Important limitation:
-- No antivirus engine was installed in the build environment, so this audit is a
-  source/static-binary review, not an antivirus certification. The build is also
-  unsigned. The project intentionally uses a tiny no-import Win32 API resolver,
-  which can look unusual to heuristic antivirus engines even though the included
-  source shows the resolved API set and behavior.
-
-Static checks performed:
+Static checks:
 - LLVM clang static analyzer: no diagnostics.
-- -Wall -Wextra -Wpedantic -Wshadow -Wconversion: only benign numeric precision
-  and unused-helper warnings; no resource-management diagnostic.
-- PE architecture: x86-64 PE32+.
-- VST export: VSTPluginMain present.
+- Warning build: only pre-existing benign numeric precision / unused-helper warnings.
+- Both binaries: PE32+ x86-64.
+- VST DLL exports VSTPluginMain.
+
+Antivirus limitation:
+- No antivirus engine is installed in the build environment, so this is source/static
+  review rather than an antivirus certification. Full source and build commands are
+  included for reproducibility.
