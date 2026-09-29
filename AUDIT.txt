@@ -1,21 +1,20 @@
-APO Soundboard v0.6.3 build checks
+APO Soundboard v0.6.4 build checks
 =================================
 
-- APOSoundboard_v0.6.3.dll: PE32+ x86-64 Windows DLL.
+- APOSoundboard_v0.6.4.dll: PE32+ x86-64 Windows DLL.
 - APOSoundboardController.exe: PE32+ x86-64 Windows GUI executable.
 - DLL export table contains VSTPluginMain.
 - Clang static analyzer reported 0 diagnostics for plugin.c.
 - Clang static analyzer reported 0 diagnostics for controller.c.
 
-Hotkey-capture change:
-The controller unregisters its own global hotkeys before listening for a new
-binding and restores them after accept/reject/cancel. This prevents a key being
-tested for a new pad from simultaneously firing the pad that already owns it.
-A WM_HOTKEY guard is also present during capture.
+Control changes:
+- Pitch storage remains in half-semitone units, but is clamped to -24..+24
+  half-steps, corresponding to -12.0..+12.0 semitones.
+- Fine pitch resolution remains 0.5 st.
+- Fine volume resolution remains 0.5 percentage point.
+- Volume has magnetic major notches every 25 percentage points.
+- Pitch has magnetic major notches every 3 semitones (25% of either 12-st side).
+- Both bars draw nine external tick marks matching their major snap positions.
 
-Slider change:
-Volume is quantized to 0.5 percentage-point values. Pitch is stored in signed
-half-semitone units (-48..+48), corresponding to -24.0..+24.0 semitones.
-Legacy config pitch integers are multiplied by two during load.
-
-The existing v0.6.2 stability hardening and resource diagnostics are unchanged.
+All v0.6.3 hotkey-capture fixes, diagnostics, backup/recovery, and stability
+hardening remain unchanged.
