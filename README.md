@@ -32,17 +32,18 @@ The controller does **not** create a virtual microphone or virtual audio cable.
 ## Installation
 
 1. Download the latest release ZIP.
-2. Extract both files into the same folder, for example:
+2. Extract the **entire APOSoundboard folder** into Equalizer APO's VST folder:
 
-   `C:\Program Files\EqualizerAPO\VSTPlugins\APOSoundboard\`
+   `C:\Program Files\EqualizerAPO\VSTPlugins\`
 
+   After extraction, the DLL and `APOSoundboardController.exe` should stay together inside the same APOSoundboard folder.
 3. In Equalizer APO Configurator, make sure Equalizer APO is enabled for the microphone/capture device you actually use.
 4. In Configuration Editor, add **Plugins -> VST plugin** to that microphone chain.
-5. Select `APOSoundboard_v0.6.4.dll`.
+5. Select the APOSoundboard DLL from the extracted folder.
 6. Click **Open panel**. The controller should launch.
 7. Load sounds, assign hotkeys, and test with an application actively using the microphone.
 
-Keep the DLL and `APOSoundboardController.exe` together because the VST launches the controller from its own directory.
+Do not move the controller EXE away from the DLL; the VST launches it from the same directory.
 
 ## Pad controls
 
@@ -74,6 +75,10 @@ A backup is kept alongside it as `config_v05.bin.bak`. Writes are staged through
 - VST2 host path used by Equalizer APO
 - Apps that bypass the Windows system-effects path, such as some ASIO or WASAPI-exclusive setups, may also bypass Equalizer APO and therefore this plugin.
 - Binaries are currently unsigned, so Windows SmartScreen or antivirus software may warn about an unknown application.
+
+## Development
+
+This project is roughly **half hand-coded by me and half vibe-coded with AI assistance**. The goal is to keep the code understandable and practical while using AI to help iterate, debug, audit, and prototype features faster.
 
 ## Building from source
 
