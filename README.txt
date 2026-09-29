@@ -1,50 +1,25 @@
-APO Soundboard v0.6 x64
-=======================
+APO Soundboard v0.6.1 x64 - Stability Audit Build
+==================================================
 
-This is a focused update to the working v0.5 / v0.2-style architecture.
-No installer is included.
+This is v0.6 behavior/UI with stability hardening only. No installer.
+Keep APOSoundboard_v0.6.1.dll and APOSoundboardController.exe together.
 
-Keep these two files together:
-  APOSoundboard_v0.6.dll
-  APOSoundboardController.exe
+Stability changes:
+- VST pipe thread must stop before the VST instance can be freed (prevents use-after-free).
+- Media Foundation and COM are shut down cleanly when the controller exits.
+- The single-instance mutex is closed cleanly.
+- Worker threads no longer call GUI SetWindowText directly; connection UI updates are posted to the UI thread.
+- Decoded sample RAM is bounded to 128 MiB per pad and 512 MiB total to prevent runaway memory pressure from long files.
+- Idle pipe polling is reduced slightly to lower wakeups/CPU use.
+- Same config_v05.bin format and same v0.6 controls/behavior.
 
-In Equalizer APO, use APOSoundboard_v0.6.dll as the VST plugin.
-Open Panel launches APOSoundboardController.exe.
+Security/static audit notes:
+- No networking APIs.
+- No registry writes or startup persistence.
+- No process injection, remote-thread, credential, or downloader code.
+- UI uses Win32/GDI only; no Direct3D/OpenGL/Vulkan GPU path.
+- The binaries use a tiny dynamic Win32 API resolver, so their PE import table is intentionally empty.
+  This is unusual but comes from the included source/build method, not from packed/encrypted payloads.
 
-Changes in v0.6
----------------
-1. Correct pad click behavior
-   - Single-click: select the pad only.
-   - Double-click: play that pad.
-   - Playback uses the highlighted waveform range.
-   - Empty pads no longer open the file dialog just from a single-click;
-     select the pad, then use Load / Replace Audio.
-
-2. Volume drag control
-   - Drag horizontally to set 0% to 200%.
-   - The selected-pad text shows the exact percentage.
-   - Double-click the Volume bar to reset to 100%.
-
-3. Pitch drag control
-   - Drag horizontally to set -24 to +24 semitones.
-   - The selected-pad text shows the exact semitone value.
-   - Double-click the Pitch bar to reset to 0 semitones.
-   - Pitch remains sampler-style: changing pitch also changes playback speed.
-
-4. Existing waveform + multi-format behavior retained
-   - Drag over the waveform to select the playback range.
-   - Double-click the waveform, or press Full Range, to restore the full sample.
-   - WAV is built in; Windows Media Foundation is used for other supported
-     formats such as MP3, FLAC, M4A/AAC and WMA where Windows can decode them.
-
-Settings
---------
-- v0.6 intentionally uses the same config_v05.bin format as v0.5 because no
-  saved-data fields changed. Your v0.5 pad assignments, volume, pitch,
-  waveform ranges and hotkeys should carry over directly.
-
-Important
----------
-This build was cross-compiled and statically checked as x86-64 Windows PE.
-It cannot be runtime-tested inside Equalizer APO from the build environment.
-Keep your known-working v0.5 files until you confirm v0.6 on your PC.
+This build was cross-compiled and statically checked, but cannot be runtime-tested
+inside Equalizer APO in the build environment.

@@ -1,8 +1,7 @@
-Requires LLVM clang and lld-link.
+Requires LLVM clang and lld-link. From src:
 
-From src:
-  clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-  lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboard_v0.6.dll plugin.obj
+clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
+lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboard_v0.6.1.dll plugin.obj
 
-  clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
-  lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardController.exe controller.obj
+clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
+lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardController.exe controller.obj

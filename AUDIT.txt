@@ -1,0 +1,58 @@
+APO Soundboard v0.6.1 Stability / Security Audit
+================================================
+
+Audited baseline: v0.6 source + binaries.
+
+Fixed in v0.6.1:
+- VST shutdown could free the plugin object after a 1.5 s timeout even if the pipe
+  worker had not exited. That was a use-after-free risk. v0.6.1 waits longer and
+  refuses to free the instance if the worker does not stop safely.
+- Media Foundation / COM startup was process-lifetime only in v0.6. v0.6.1 resolves
+  and calls MFShutdown / CoUninitialize and unloads the decoder DLLs on clean exit.
+- The controller single-instance mutex handle is now closed on clean exit.
+- Pipe worker threads now post connection-status changes to the UI thread instead
+  of calling SetWindowText across threads.
+- Decoded sample memory is capped at 128 MiB per pad and 512 MiB total. Long
+  compressed files are otherwise fully decoded to float PCM and can consume a lot
+  of RAM even without a true leak.
+- Idle pipe polling was reduced from 2 ms to 5 ms while the ring buffer is full.
+
+Reviewed and found bounded / paired:
+- WAV file handles are closed on all reviewed paths.
+- Media Foundation reader/media-type/sample/buffer COM objects are released.
+- Replacing a pad frees the previous decoded sample buffer.
+- GDI brushes/pens are created once and DeleteObject is called at WM_DESTROY.
+- BeginPaint/EndPaint and SelectObject restore are paired.
+- Named pipe handles and client allocations are released when clients disconnect.
+- VST ring-buffer worker allocation is freed when the worker exits.
+
+GPU:
+- There is no Direct3D, OpenGL, Vulkan, Direct2D, or GPU-compute code. The UI uses
+  classic Win32/GDI drawing. A GPU-memory leak is therefore not indicated by this
+  source.
+
+Security review:
+- No networking APIs or sockets.
+- No HTTP/download code.
+- No registry writes.
+- No startup persistence/service/task creation.
+- No process injection, WriteProcessMemory, VirtualAllocEx, CreateRemoteThread,
+  credential access, or keystroke logging. Global hotkeys use RegisterHotKey only.
+- ShellExecuteW is used only by the VST panel to launch the companion controller
+  from the same directory.
+- Audio files are read locally; non-WAV formats are decoded through Windows Media
+  Foundation.
+
+Important limitation:
+- No antivirus engine was installed in the build environment, so this audit is a
+  source/static-binary review, not an antivirus certification. The build is also
+  unsigned. The project intentionally uses a tiny no-import Win32 API resolver,
+  which can look unusual to heuristic antivirus engines even though the included
+  source shows the resolved API set and behavior.
+
+Static checks performed:
+- LLVM clang static analyzer: no diagnostics.
+- -Wall -Wextra -Wpedantic -Wshadow -Wconversion: only benign numeric precision
+  and unused-helper warnings; no resource-management diagnostic.
+- PE architecture: x86-64 PE32+.
+- VST export: VSTPluginMain present.
