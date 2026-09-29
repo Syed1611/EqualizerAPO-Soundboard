@@ -1,40 +1,36 @@
-APO Soundboard v0.6.2 x64
+APO Soundboard v0.6.3 x64
 ========================
 
-This keeps the working v0.6/v0.6.1 soundboard behavior and UI. No installer.
-Keep APOSoundboard_v0.6.2.dll and APOSoundboardController.exe in the same folder.
+This is a focused update to the working v0.6.2 build. No installer.
+Keep APOSoundboard_v0.6.3.dll and APOSoundboardController.exe in the same folder.
 
-New in v0.6.2
+New in v0.6.3
 -------------
-- Hotkey conflict warnings:
-  * If another pad already uses the shortcut, the warning names that pad.
-  * If Windows/another application rejects the shortcut, the previous hotkey is restored.
-  * Saved hotkeys that cannot register are marked [CONFLICT] on the affected pad.
-- Built-in diagnostics at the bottom of the controller, updated once per second:
-  RAM, decoded-sample RAM, CPU, process handle count, thread count, GDI objects,
-  USER objects, VST connections, hotkey conflicts, config-backup status and uptime.
-- Automatic config backup/recovery:
-  * Config writes go to a temporary file first and are replaced atomically.
-  * The previous known-good config is kept as config_v05.bin.bak.
-  * New saves include a CRC check.
-  * If the main config is damaged/truncated, the backup is loaded automatically.
-
-Existing v0.6.1 stability hardening is retained:
-- Safe VST worker-thread shutdown.
-- Clean Media Foundation / COM shutdown.
-- Bounded decoded sample RAM: 128 MiB per pad, 512 MiB total.
-- No cross-thread UI text updates.
-- GDI resources and handles are explicitly cleaned up.
+- Fixed hotkey capture conflict behavior:
+  * All APOSoundboard global hotkeys are temporarily unregistered while Set Hotkey is listening.
+  * Pressing a shortcut already assigned to another pad no longer triggers/plays that pad.
+  * The attempted assignment is rejected immediately with a warning naming the conflicting pad.
+  * Existing hotkeys are restored as soon as capture finishes or is cancelled.
+  * WM_HOTKEY events are ignored while capture is active as an additional safety guard.
+- Volume slider now snaps to 0.5% increments.
+- Pitch slider now snaps to 0.5-semitone increments from -24.0 to +24.0 st.
+- Double-click reset remains: Volume = 100.0%, Pitch = 0.0 st.
+- Selected-pad readout now displays the decimal half-step values.
 
 Configuration compatibility
 ---------------------------
-The controller still uses %LOCALAPPDATA%\APOSoundboard\config_v05.bin and can read
-existing v0.5/v0.6/v0.6.1 settings. v0.6.2 upgrades future saves to a checksummed
-version of that same config file. The backup is stored alongside it as
-config_v05.bin.bak.
+The controller continues to use:
+  %LOCALAPPDATA%\APOSoundboard\config_v05.bin
+
+Existing v0.5/v0.6/v0.6.1/v0.6.2 settings are read directly. Older integer
+pitch values are converted to equivalent half-semitone units when loaded.
+New saves use config format version 4 with the same CRC/backup system.
+
+All v0.6.2 diagnostics, automatic config backup/recovery, memory limits,
+Media Foundation cleanup, and VST shutdown hardening are retained.
 
 Runtime note
 ------------
-This build was cross-compiled and statically checked, but cannot be executed inside
-Equalizer APO in the build environment. Keep your previous working build until you
-have verified v0.6.2 on your Windows system.
+This build was cross-compiled and statically checked, but cannot be executed
+inside Equalizer APO in the build environment. Keep the previous working build
+until you have verified v0.6.3 on your Windows system.

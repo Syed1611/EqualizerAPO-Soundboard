@@ -1,48 +1,21 @@
-APO Soundboard v0.6.2 Build / Stability Notes
-=============================================
+APO Soundboard v0.6.3 build checks
+=================================
 
-Baseline: v0.6.1.
+- APOSoundboard_v0.6.3.dll: PE32+ x86-64 Windows DLL.
+- APOSoundboardController.exe: PE32+ x86-64 Windows GUI executable.
+- DLL export table contains VSTPluginMain.
+- Clang static analyzer reported 0 diagnostics for plugin.c.
+- Clang static analyzer reported 0 diagnostics for controller.c.
 
-Added in v0.6.2:
-- Hotkey conflict detection for duplicate pad shortcuts before registration.
-- Separate warning when RegisterHotKey is rejected by Windows/another application.
-- Conflicted saved pads are visibly marked [CONFLICT].
-- Passive diagnostics updated once per second using standard process counters.
-- Diagnostics snapshot handles are closed on every update and the UI timer is killed
-  during WM_DESTROY.
-- Atomic config saves: write + flush temporary file, backup prior known-good config,
-  then MoveFileExW with replace/write-through.
-- CRC32 on v3 config saves; v2 configs remain readable.
-- Automatic fallback to config_v05.bin.bak when the primary v2/v3 config is invalid.
+Hotkey-capture change:
+The controller unregisters its own global hotkeys before listening for a new
+binding and restores them after accept/reject/cancel. This prevents a key being
+tested for a new pad from simultaneously firing the pad that already owns it.
+A WM_HOTKEY guard is also present during capture.
 
-Retained v0.6.1 stability fixes:
-- VST instance is not freed while its worker thread can still reference it.
-- Media Foundation / COM are shut down cleanly.
-- Single-instance mutex is closed.
-- Pipe workers post UI updates to the UI thread.
-- Decoded sample RAM caps: 128 MiB per pad / 512 MiB total.
-- GDI brushes/pens are created once and deleted at shutdown.
-- Named pipe and file handles are closed on reviewed paths.
+Slider change:
+Volume is quantized to 0.5 percentage-point values. Pitch is stored in signed
+half-semitone units (-48..+48), corresponding to -24.0..+24.0 semitones.
+Legacy config pitch integers are multiplied by two during load.
 
-GPU:
-- No Direct3D, Direct2D, OpenGL, Vulkan or GPU-compute path. UI rendering is classic
-  Win32/GDI.
-
-Security review:
-- No network/socket/HTTP/downloader code.
-- No registry writes, service/task/startup persistence.
-- No process injection, remote-thread, credential-access or keylogging code.
-- Global shortcuts use RegisterHotKey only.
-- ShellExecuteW is used by the VST panel only to launch the companion controller in
-  the same directory.
-
-Static checks:
-- LLVM clang static analyzer: no diagnostics.
-- Warning build: only pre-existing benign numeric precision / unused-helper warnings.
-- Both binaries: PE32+ x86-64.
-- VST DLL exports VSTPluginMain.
-
-Antivirus limitation:
-- No antivirus engine is installed in the build environment, so this is source/static
-  review rather than an antivirus certification. Full source and build commands are
-  included for reproducibility.
+The existing v0.6.2 stability hardening and resource diagnostics are unchanged.
