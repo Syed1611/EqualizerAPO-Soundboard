@@ -2,7 +2,29 @@
 
 All notable project changes are recorded here. Versions v0.3.0 and v0.4.0 were experimental branches that were later superseded; they are retained for transparency and reproducibility.
 
-## v0.6.4 - Current
+## [0.7.0]
+
+### Added
+- HQ cubic pitch resampling.
+- Adaptive VST audio buffering.
+- Underrun counter and expanded host/audio diagnostics.
+- Custom pad names.
+- Active playing indicators for pads.
+- Global Stop All hotkey.
+- Live output peak and clipping indicator.
+
+### Changed
+- Controller/VST communication protocol upgraded to v2.
+- Pitch ratios are precomputed.
+- Mixer bypasses unnecessary processing while idle.
+- Existing v0.6.x configs are upgraded automatically when saved.
+
+### Performance
+- Reduced unnecessary locking while no voices are active.
+- Reduced idle mixer work.
+- Adaptive buffering reacts to underruns while maintaining a bounded latency target.
+
+## v0.6.4
 
 ### Changed
 - Reduced per-pad pitch range from +/-24 st to **-12.0 to +12.0 semitones**.
