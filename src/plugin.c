@@ -3,7 +3,12 @@
 #define VST_MAGIC ((WL_I32)0x56737450) /* 'VstP' */
 #define FOURCC(a,b,c,d) ((WL_I32)(((WL_U32)(a)<<24)|((WL_U32)(b)<<16)|((WL_U32)(c)<<8)|(WL_U32)(d)))
 #define PLUGIN_ID FOURCC('A','P','S','B')
+#define EFF_HAS_EDITOR (1<<0)
 #define EFF_CAN_REPLACING (1<<4)
+#define WS_CHILD 0x40000000u
+#define WS_VISIBLE 0x10000000u
+#define SS_LEFT 0x00000000u
+#define SW_SHOWNORMAL 1
 #define PIPE_CHUNK 512u
 #define RING_FRAMES 4096u
 #define RING_MASK (RING_FRAMES-1u)
@@ -28,7 +33,8 @@ struct AEffect {
  WL_I32 numPrograms,numParams,numInputs,numOutputs,flags; void* resvd1; void* resvd2; WL_I32 initialDelay,realQualities,offQualities; float ioRatio; void* object; void* user; WL_I32 uniqueID,version; AEffectProcessProc processReplacing; AEffectProcessDoubleProc processDoubleReplacing; char future[56];
 };
 
-enum { effOpen=0,effClose=1,effGetParamLabel=6,effGetParamDisplay=7,effGetParamName=8,effSetSampleRate=10,effSetBlockSize=11,effMainsChanged=12,effGetPlugCategory=35,effGetEffectName=45,effGetVendorString=47,effGetProductString=48,effGetVendorVersion=49,effCanDo=51,effGetVstVersion=58,effStartProcess=71,effStopProcess=72 };
+enum { effOpen=0,effClose=1,effGetParamLabel=6,effGetParamDisplay=7,effGetParamName=8,effSetSampleRate=10,effSetBlockSize=11,effMainsChanged=12,effEditGetRect=13,effEditOpen=14,effEditClose=15,effEditIdle=19,effGetPlugCategory=35,effGetEffectName=45,effGetVendorString=47,effGetProductString=48,effGetVendorVersion=49,effCanDo=51,effGetVstVersion=58,effStartProcess=71,effStopProcess=72 };
+typedef struct { WL_I16 top,left,bottom,right; } VstRect;
 
 #pragma pack(push,1)
 typedef struct { WL_U32 magic,version,sampleRate,channels; } PipeHello;
@@ -52,7 +58,26 @@ typedef struct {
  volatile WL_U32 rpos,wpos;
  float ring[RING_FRAMES*2];
  float params[3];
+ VstRect editorRect;
+ WL_HWND editorChild;
+ WL_API editorApi;
+ WL_I32 editorReady;
 } Plugin;
+
+
+static WL_HMODULE g_dll_module=0;
+static const WL_WCHAR CONTROLLER_EXE[]={ 'A','P','O','S','o','u','n','d','b','o','a','r','d','C','o','n','t','r','o','l','l','e','r','.','e','x','e',0 };
+static const WL_WCHAR STATIC_CLASS[]={ 'S','T','A','T','I','C',0 };
+static const WL_WCHAR PANEL_TEXT[]={ 'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','i','s',' ','l','o','a','d','e','d','.', '\r','\n','O','p','e','n',' ','P','a','n','e','l',' ','l','a','u','n','c','h','e','s',' ','t','h','e',' ','c','o','n','t','r','o','l','l','e','r',' ','f','o','r',' ','p','a','d','s',' ','a','n','d',' ','g','l','o','b','a','l',' ','h','o','t','k','e','y','s','.', '\r','\n','Y','o','u',' ','m','a','y',' ','c','l','o','s','e',' ','t','h','i','s',' ','s','m','a','l','l',' ','p','a','n','e','l',';',' ','t','h','e',' ','c','o','n','t','r','o','l','l','e','r',' ','k','e','e','p','s',' ','r','u','n','n','i','n','g','.',0 };
+static const WL_WCHAR OPEN_VERB[]={ 'o','p','e','n',0 };
+
+static void launch_controller(Plugin*p){
+ WL_API*a=&p->editorApi;if(!p->editorReady||!a->ShellExecuteW||!g_dll_module)return;
+ WL_WCHAR path[520];WL_DWORD n=a->GetModuleFileNameW(g_dll_module,path,520);if(!n||n>=519)return;
+ WL_DWORD slash=0;for(WL_DWORD i=0;i<n;i++)if(path[i]=='\\'||path[i]=='/')slash=i+1;
+ if(!slash)return;path[slash]=0;wl_wcat(path,CONTROLLER_EXE,520);
+ a->ShellExecuteW(0,OPEN_VERB,path,0,0,SW_SHOWNORMAL);
+}
 
 static Plugin* P(AEffect* e){return (Plugin*)e->object;}
 static float clampf(float x,float a,float b){return x<a?a:(x>b?b:x);}
@@ -83,7 +108,7 @@ static void WL_CALLBACK process_replacing(AEffect*e,float**in,float**out,WL_I32 
 static void WL_CALLBACK process_accum(AEffect*e,float**in,float**out,WL_I32 frames){process_replacing(e,in,out,frames);}
 static void WL_CALLBACK set_param(AEffect*e,WL_I32 index,float v){Plugin*p=P(e);if(index>=0&&index<3)p->params[index]=clampf(v,0,1);}
 static float WL_CALLBACK get_param(AEffect*e,WL_I32 index){Plugin*p=P(e);return (index>=0&&index<3)?p->params[index]:0;}
-static WL_IPTR WL_CALLBACK dispatch(AEffect*e,WL_I32 op,WL_I32 index,WL_IPTR value,void*ptr,float opt){Plugin*p=P(e);switch(op){case effOpen:return 0;case effClose:{stop_stream(p);if(ensure_api(p))p->api.HeapFree(p->api.GetProcessHeap(),0,p);return 0;}case effSetSampleRate:p->sampleRate=(WL_U32)(opt>8000?opt:48000);return 0;case effSetBlockSize:return 0;case effMainsChanged:if(value)start_stream(p);else stop_stream(p);return 0;case effStartProcess:start_stream(p);return 1;case effStopProcess:stop_stream(p);return 1;case effGetParamName:if(ptr){acpy((char*)ptr,index==0?"Board":index==1?"Mic":index==2?"Limiter":"",32);}return 1;case effGetParamLabel:if(ptr)acpy((char*)ptr,index<2?"%":"",16);return 1;case effGetParamDisplay:if(ptr){if(index<2)utoa3((char*)ptr,(int)(p->params[index]*200.0f+0.5f));else acpy((char*)ptr,p->params[2]>=0.5f?"On":"Off",16);}return 1;case effGetEffectName:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorString:if(ptr)acpy((char*)ptr,"OpenAI Build",64);return 1;case effGetProductString:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorVersion:return 10000;case effGetVstVersion:return 2400;case effGetPlugCategory:return 1;case effCanDo:return 0;default:return 0;}}
+static WL_IPTR WL_CALLBACK dispatch(AEffect*e,WL_I32 op,WL_I32 index,WL_IPTR value,void*ptr,float opt){Plugin*p=P(e);switch(op){case effOpen:return 0;case effClose:{if(p->editorChild&&p->editorReady&&p->editorApi.DestroyWindow){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}stop_stream(p);if(ensure_api(p))p->api.HeapFree(p->api.GetProcessHeap(),0,p);return 0;}case effSetSampleRate:p->sampleRate=(WL_U32)(opt>8000?opt:48000);return 0;case effSetBlockSize:return 0;case effMainsChanged:if(value)start_stream(p);else stop_stream(p);return 0;case effEditGetRect:if(ptr){*(VstRect**)ptr=&p->editorRect;return 1;}return 0;case effEditOpen:{if(!ptr)return 0;if(!p->editorReady){if(!wl_init_gui(&p->editorApi))return 0;p->editorReady=1;}if(p->editorChild){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}p->editorChild=p->editorApi.CreateWindowExW(0,STATIC_CLASS,PANEL_TEXT,WS_CHILD|WS_VISIBLE|SS_LEFT,12,12,496,80,(WL_HWND)ptr,0,(WL_HINSTANCE)p->editorApi.GetModuleHandleW(0),0);launch_controller(p);return 1;}case effEditClose:if(p->editorChild&&p->editorReady&&p->editorApi.DestroyWindow){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}return 1;case effEditIdle:return 1;case effStartProcess:start_stream(p);return 1;case effStopProcess:stop_stream(p);return 1;case effGetParamName:if(ptr){acpy((char*)ptr,index==0?"Board":index==1?"Mic":index==2?"Limiter":"",32);}return 1;case effGetParamLabel:if(ptr)acpy((char*)ptr,index<2?"%":"",16);return 1;case effGetParamDisplay:if(ptr){if(index<2)utoa3((char*)ptr,(int)(p->params[index]*200.0f+0.5f));else acpy((char*)ptr,p->params[2]>=0.5f?"On":"Off",16);}return 1;case effGetEffectName:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorString:if(ptr)acpy((char*)ptr,"OpenAI Build",64);return 1;case effGetProductString:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorVersion:return 20000;case effGetVstVersion:return 2400;case effGetPlugCategory:return 1;case effCanDo:return 0;default:return 0;}}
 
-__declspec(dllexport) AEffect* WL_CALLBACK VSTPluginMain(audioMasterCallback host){WL_API api;if(!wl_init_kernel(&api))return 0;Plugin*p=(Plugin*)api.HeapAlloc(api.GetProcessHeap(),0,sizeof(Plugin));if(!p)return 0;memset(p,0,sizeof(*p));p->api=api;p->apiReady=1;p->host=host;p->sampleRate=48000;p->params[0]=0.5f;p->params[1]=0.5f;p->params[2]=1.0f;AEffect*e=&p->effect;e->magic=VST_MAGIC;e->dispatcher=dispatch;e->process=process_accum;e->setParameter=set_param;e->getParameter=get_param;e->numPrograms=1;e->numParams=3;e->numInputs=2;e->numOutputs=2;e->flags=EFF_CAN_REPLACING;e->object=p;e->uniqueID=PLUGIN_ID;e->version=10000;e->processReplacing=process_replacing;return e;}
-WL_BOOL WL_CALLBACK DllMain(void*h,WL_DWORD reason,void*reserved){(void)h;(void)reason;(void)reserved;return WL_TRUE;}
+__declspec(dllexport) AEffect* WL_CALLBACK VSTPluginMain(audioMasterCallback host){WL_API api;if(!wl_init_kernel(&api))return 0;Plugin*p=(Plugin*)api.HeapAlloc(api.GetProcessHeap(),0,sizeof(Plugin));if(!p)return 0;memset(p,0,sizeof(*p));p->api=api;p->apiReady=1;p->host=host;p->sampleRate=48000;p->params[0]=0.5f;p->params[1]=0.5f;p->params[2]=1.0f;p->editorRect.top=0;p->editorRect.left=0;p->editorRect.bottom=104;p->editorRect.right=520;AEffect*e=&p->effect;e->magic=VST_MAGIC;e->dispatcher=dispatch;e->process=process_accum;e->setParameter=set_param;e->getParameter=get_param;e->numPrograms=1;e->numParams=3;e->numInputs=2;e->numOutputs=2;e->flags=EFF_HAS_EDITOR|EFF_CAN_REPLACING;e->object=p;e->uniqueID=PLUGIN_ID;e->version=20000;e->processReplacing=process_replacing;return e;}
+WL_BOOL WL_CALLBACK DllMain(void*h,WL_DWORD reason,void*reserved){(void)reserved;if(reason==1)g_dll_module=(WL_HMODULE)h;return WL_TRUE;}

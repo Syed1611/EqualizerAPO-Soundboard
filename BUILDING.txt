@@ -1,8 +1,5 @@
-Rebuilding APO Soundboard x64
-==============================
-
-The source deliberately has no JUCE, Visual C++ runtime, Steinberg SDK, or other binary
-dependency. It implements only the small VST2 ABI subset that Equalizer APO uses.
+Rebuilding APO Soundboard v0.2 x64
+===================================
 
 Required:
 - LLVM clang targeting x86_64-pc-windows-msvc
@@ -11,22 +8,19 @@ Required:
 From the src directory:
 
 clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboard.dll plugin.obj
+lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboard_v0.2.dll plugin.obj
 
 clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
 lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardController.exe controller.obj
 
 Static checks:
-file APOSoundboard.dll APOSoundboardController.exe
-llvm-objdump -p APOSoundboard.dll
+file APOSoundboard_v0.2.dll APOSoundboardController.exe
+llvm-objdump -p APOSoundboard_v0.2.dll
 
 Expected:
 - Both files are PE32+ x86-64.
 - DLL export table contains VSTPluginMain.
+- VST flags include replacing + editor support.
+- Editor dispatcher implements effEditGetRect/Open/Close/Idle for Equalizer APO.
 
-Design notes
-------------
-The binaries intentionally use a tiny Win32 runtime resolver in winlite.h, so they do
-not require a separately installed MSVC redistributable. APOSoundboard.dll exposes a
-2-input/2-output replacing VST2 effect. Mono Equalizer APO capture configurations still
-work because Equalizer APO supplies an empty second channel and uses the first output.
+The source has no JUCE, Steinberg SDK, MSVC runtime, or third-party binary dependency.

@@ -113,6 +113,7 @@ typedef WL_BOOL (WL_WINAPI *WL_DestroyWindow)(WL_HWND);
 typedef WL_UINT (WL_WINAPI *WL_MapVirtualKeyW)(WL_UINT,WL_UINT);
 typedef WL_I32 (WL_WINAPI *WL_GetKeyNameTextW)(WL_I32,WL_WCHAR*,WL_I32);
 typedef WL_LRESULT (WL_WINAPI *WL_SendMessageW)(WL_HWND,WL_UINT,WL_WPARAM,WL_LPARAM);
+typedef WL_HINSTANCE (WL_WINAPI *WL_ShellExecuteW)(WL_HWND,const WL_WCHAR*,const WL_WCHAR*,const WL_WCHAR*,const WL_WCHAR*,WL_I32);
 
 typedef WL_BOOL (WL_WINAPI *WL_GetOpenFileNameW)(WL_OPENFILENAMEW*);
 typedef WL_BOOL (WL_WINAPI *WL_ConvertStringSecurityDescriptorToSecurityDescriptorW)(const WL_WCHAR*,WL_DWORD,void**,WL_DWORD*);
@@ -124,6 +125,7 @@ typedef struct {
  void* comdlg32; WL_GetOpenFileNameW GetOpenFileNameW;
  void* advapi32; WL_ConvertStringSecurityDescriptorToSecurityDescriptorW ConvertStringSecurityDescriptorToSecurityDescriptorW;
  void* gdi32; WL_GetStockObject GetStockObject;
+ void* shell32; WL_ShellExecuteW ShellExecuteW;
 } WL_API;
 
 #define WL_RESOLVE(api,field,mod) do{ (api)->field=(WL_##field)wl_get_proc((mod),#field); if(!(api)->field)return 0; }while(0)
@@ -132,6 +134,7 @@ static const WL_WCHAR wl_user32_name[]={'u','s','e','r','3','2','.','d','l','l',
 static const WL_WCHAR wl_comdlg32_name[]={'c','o','m','d','l','g','3','2','.','d','l','l',0};
 static const WL_WCHAR wl_advapi32_name[]={'a','d','v','a','p','i','3','2','.','d','l','l',0};
 static const WL_WCHAR wl_gdi32_name[]={'g','d','i','3','2','.','d','l','l',0};
-static int wl_init_gui(WL_API* a){if(!wl_init_kernel(a))return 0;a->user32=a->LoadLibraryW(wl_user32_name);a->comdlg32=a->LoadLibraryW(wl_comdlg32_name);a->advapi32=a->LoadLibraryW(wl_advapi32_name);a->gdi32=a->LoadLibraryW(wl_gdi32_name);if(!a->user32||!a->comdlg32||!a->advapi32||!a->gdi32)return 0;WL_RESOLVE(a,RegisterClassExW,a->user32);WL_RESOLVE(a,CreateWindowExW,a->user32);WL_RESOLVE(a,DefWindowProcW,a->user32);WL_RESOLVE(a,ShowWindow,a->user32);WL_RESOLVE(a,UpdateWindow,a->user32);WL_RESOLVE(a,GetMessageW,a->user32);WL_RESOLVE(a,TranslateMessage,a->user32);WL_RESOLVE(a,DispatchMessageW,a->user32);WL_RESOLVE(a,PostQuitMessage,a->user32);WL_RESOLVE(a,SetWindowTextW,a->user32);WL_RESOLVE(a,SetFocus,a->user32);WL_RESOLVE(a,GetKeyState,a->user32);WL_RESOLVE(a,RegisterHotKey,a->user32);WL_RESOLVE(a,UnregisterHotKey,a->user32);WL_RESOLVE(a,MessageBoxW,a->user32);WL_RESOLVE(a,DestroyWindow,a->user32);WL_RESOLVE(a,MapVirtualKeyW,a->user32);WL_RESOLVE(a,GetKeyNameTextW,a->user32);WL_RESOLVE(a,SendMessageW,a->user32);WL_RESOLVE(a,GetOpenFileNameW,a->comdlg32);WL_RESOLVE(a,ConvertStringSecurityDescriptorToSecurityDescriptorW,a->advapi32);WL_RESOLVE(a,GetStockObject,a->gdi32);return 1;}
+static const WL_WCHAR wl_shell32_name[]={'s','h','e','l','l','3','2','.','d','l','l',0};
+static int wl_init_gui(WL_API* a){if(!wl_init_kernel(a))return 0;a->user32=a->LoadLibraryW(wl_user32_name);a->comdlg32=a->LoadLibraryW(wl_comdlg32_name);a->advapi32=a->LoadLibraryW(wl_advapi32_name);a->gdi32=a->LoadLibraryW(wl_gdi32_name);a->shell32=a->LoadLibraryW(wl_shell32_name);if(!a->user32||!a->comdlg32||!a->advapi32||!a->gdi32||!a->shell32)return 0;WL_RESOLVE(a,RegisterClassExW,a->user32);WL_RESOLVE(a,CreateWindowExW,a->user32);WL_RESOLVE(a,DefWindowProcW,a->user32);WL_RESOLVE(a,ShowWindow,a->user32);WL_RESOLVE(a,UpdateWindow,a->user32);WL_RESOLVE(a,GetMessageW,a->user32);WL_RESOLVE(a,TranslateMessage,a->user32);WL_RESOLVE(a,DispatchMessageW,a->user32);WL_RESOLVE(a,PostQuitMessage,a->user32);WL_RESOLVE(a,SetWindowTextW,a->user32);WL_RESOLVE(a,SetFocus,a->user32);WL_RESOLVE(a,GetKeyState,a->user32);WL_RESOLVE(a,RegisterHotKey,a->user32);WL_RESOLVE(a,UnregisterHotKey,a->user32);WL_RESOLVE(a,MessageBoxW,a->user32);WL_RESOLVE(a,DestroyWindow,a->user32);WL_RESOLVE(a,MapVirtualKeyW,a->user32);WL_RESOLVE(a,GetKeyNameTextW,a->user32);WL_RESOLVE(a,SendMessageW,a->user32);WL_RESOLVE(a,GetOpenFileNameW,a->comdlg32);WL_RESOLVE(a,ConvertStringSecurityDescriptorToSecurityDescriptorW,a->advapi32);WL_RESOLVE(a,GetStockObject,a->gdi32);WL_RESOLVE(a,ShellExecuteW,a->shell32);return 1;}
 
 #endif
