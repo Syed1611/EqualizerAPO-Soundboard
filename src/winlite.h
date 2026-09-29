@@ -19,6 +19,8 @@ typedef void* WL_HMODULE;
 typedef void* WL_HBRUSH;
 typedef void* WL_HFONT;
 typedef void* WL_HGDIOBJ;
+typedef void* WL_HDC;
+typedef void* WL_HPEN;
 typedef unsigned short WL_WCHAR;
 typedef WL_U64 WL_WPARAM;
 typedef WL_I64 WL_LPARAM;
@@ -61,10 +63,12 @@ static void* wl_get_proc(void* mod,const char* name){return wl_get_proc_depth(mo
 
 /* Core structs. */
 typedef struct { WL_I32 left,top,right,bottom; } WL_RECT;
+typedef struct { WL_I32 x,y; } WL_POINT;
 typedef struct { WL_HWND hwnd; WL_UINT message; WL_WPARAM wParam; WL_LPARAM lParam; WL_DWORD time; WL_I32 pt_x,pt_y; WL_DWORD lPrivate; } WL_MSG;
 typedef WL_LRESULT (WL_CALLBACK *WL_WNDPROC)(WL_HWND,WL_UINT,WL_WPARAM,WL_LPARAM);
 typedef struct { WL_UINT cbSize,style; WL_WNDPROC lpfnWndProc; WL_I32 cbClsExtra,cbWndExtra; WL_HINSTANCE hInstance; void* hIcon; void* hCursor; WL_HBRUSH hbrBackground; const WL_WCHAR* lpszMenuName; const WL_WCHAR* lpszClassName; void* hIconSm; } WL_WNDCLASSEXW;
 typedef struct { WL_DWORD nLength; void* lpSecurityDescriptor; WL_BOOL bInheritHandle; } WL_SECURITY_ATTRIBUTES;
+typedef struct { WL_HDC hdc; WL_BOOL fErase; WL_RECT rcPaint; WL_BOOL fRestore; WL_BOOL fIncUpdate; WL_U8 rgbReserved[32]; } WL_PAINTSTRUCT;
 typedef WL_HANDLE (WL_WINAPI *WL_CreateMutexW)(WL_SECURITY_ATTRIBUTES*,WL_BOOL,const WL_WCHAR*);
 typedef struct { WL_DWORD lStructSize; WL_HWND hwndOwner; WL_HINSTANCE hInstance; const WL_WCHAR* lpstrFilter; WL_WCHAR* lpstrCustomFilter; WL_DWORD nMaxCustFilter; WL_DWORD nFilterIndex; WL_WCHAR* lpstrFile; WL_DWORD nMaxFile; WL_WCHAR* lpstrFileTitle; WL_DWORD nMaxFileTitle; const WL_WCHAR* lpstrInitialDir; const WL_WCHAR* lpstrTitle; WL_DWORD Flags; WL_WORD nFileOffset; WL_WORD nFileExtension; const WL_WCHAR* lpstrDefExt; WL_LPARAM lCustData; void* lpfnHook; const WL_WCHAR* lpTemplateName; void* pvReserved; WL_DWORD dwReserved; WL_DWORD FlagsEx; } WL_OPENFILENAMEW;
 
@@ -114,17 +118,40 @@ typedef WL_UINT (WL_WINAPI *WL_MapVirtualKeyW)(WL_UINT,WL_UINT);
 typedef WL_I32 (WL_WINAPI *WL_GetKeyNameTextW)(WL_I32,WL_WCHAR*,WL_I32);
 typedef WL_LRESULT (WL_WINAPI *WL_SendMessageW)(WL_HWND,WL_UINT,WL_WPARAM,WL_LPARAM);
 typedef WL_HINSTANCE (WL_WINAPI *WL_ShellExecuteW)(WL_HWND,const WL_WCHAR*,const WL_WCHAR*,const WL_WCHAR*,const WL_WCHAR*,WL_I32);
+typedef WL_HDC (WL_WINAPI *WL_BeginPaint)(WL_HWND,WL_PAINTSTRUCT*);
+typedef WL_BOOL (WL_WINAPI *WL_EndPaint)(WL_HWND,const WL_PAINTSTRUCT*);
+typedef WL_BOOL (WL_WINAPI *WL_GetClientRect)(WL_HWND,WL_RECT*);
+typedef WL_I32 (WL_WINAPI *WL_FillRect)(WL_HDC,const WL_RECT*,WL_HBRUSH);
+typedef WL_DWORD (WL_WINAPI *WL_SetTextColor)(WL_HDC,WL_DWORD);
+typedef WL_I32 (WL_WINAPI *WL_SetBkMode)(WL_HDC,WL_I32);
+typedef WL_I32 (WL_WINAPI *WL_DrawTextW)(WL_HDC,const WL_WCHAR*,WL_I32,WL_RECT*,WL_UINT);
+typedef WL_HGDIOBJ (WL_WINAPI *WL_SelectObject)(WL_HDC,WL_HGDIOBJ);
+typedef WL_BOOL (WL_WINAPI *WL_Ellipse)(WL_HDC,WL_I32,WL_I32,WL_I32,WL_I32);
+typedef WL_BOOL (WL_WINAPI *WL_MoveToEx)(WL_HDC,WL_I32,WL_I32,void*);
+typedef WL_BOOL (WL_WINAPI *WL_LineTo)(WL_HDC,WL_I32,WL_I32);
+typedef WL_BOOL (WL_WINAPI *WL_InvalidateRect)(WL_HWND,const WL_RECT*,WL_BOOL);
+typedef WL_HWND (WL_WINAPI *WL_SetCapture)(WL_HWND);
+typedef WL_BOOL (WL_WINAPI *WL_ReleaseCapture)(void);
+typedef WL_HWND (WL_WINAPI *WL_FindWindowW)(const WL_WCHAR*,const WL_WCHAR*);
+typedef WL_BOOL (WL_WINAPI *WL_SetForegroundWindow)(WL_HWND);
+typedef WL_BOOL (WL_WINAPI *WL_PostMessageW)(WL_HWND,WL_UINT,WL_WPARAM,WL_LPARAM);
+typedef WL_BOOL (WL_WINAPI *WL_SetWindowPos)(WL_HWND,WL_HWND,WL_I32,WL_I32,WL_I32,WL_I32,WL_UINT);
+typedef WL_BOOL (WL_WINAPI *WL_ScreenToClient)(WL_HWND,WL_POINT*);
 
 typedef WL_BOOL (WL_WINAPI *WL_GetOpenFileNameW)(WL_OPENFILENAMEW*);
 typedef WL_BOOL (WL_WINAPI *WL_ConvertStringSecurityDescriptorToSecurityDescriptorW)(const WL_WCHAR*,WL_DWORD,void**,WL_DWORD*);
 typedef WL_HGDIOBJ (WL_WINAPI *WL_GetStockObject)(WL_I32);
+typedef WL_HBRUSH (WL_WINAPI *WL_CreateSolidBrush)(WL_DWORD);
+typedef WL_HPEN (WL_WINAPI *WL_CreatePen)(WL_I32,WL_I32,WL_DWORD);
+typedef WL_BOOL (WL_WINAPI *WL_DeleteObject)(WL_HGDIOBJ);
+typedef WL_HFONT (WL_WINAPI *WL_CreateFontW)(WL_I32,WL_I32,WL_I32,WL_I32,WL_I32,WL_DWORD,WL_DWORD,WL_DWORD,WL_DWORD,WL_DWORD,WL_DWORD,WL_DWORD,WL_DWORD,const WL_WCHAR*);
 
 typedef struct {
  void* kernel32; WL_LoadLibraryW LoadLibraryW; WL_GetModuleHandleW GetModuleHandleW; WL_GetProcessHeap GetProcessHeap; WL_HeapAlloc HeapAlloc; WL_HeapFree HeapFree; WL_CreateThread CreateThread; WL_Sleep Sleep; WL_CreateFileW CreateFileW; WL_ReadFile ReadFile; WL_WriteFile WriteFile; WL_CloseHandle CloseHandle; WL_CancelIoEx CancelIoEx; WL_CreateMutexW CreateMutexW; WL_WaitNamedPipeW WaitNamedPipeW; WL_WaitForSingleObject WaitForSingleObject; WL_CreateNamedPipeW CreateNamedPipeW; WL_ConnectNamedPipe ConnectNamedPipe; WL_DisconnectNamedPipe DisconnectNamedPipe; WL_GetLastError GetLastError; WL_GetFileSizeEx GetFileSizeEx; WL_CreateDirectoryW CreateDirectoryW; WL_GetEnvironmentVariableW GetEnvironmentVariableW; WL_GetModuleFileNameW GetModuleFileNameW; WL_LocalFree LocalFree; WL_ExitProcess ExitProcess;
- void* user32; WL_RegisterClassExW RegisterClassExW; WL_CreateWindowExW CreateWindowExW; WL_DefWindowProcW DefWindowProcW; WL_ShowWindow ShowWindow; WL_UpdateWindow UpdateWindow; WL_GetMessageW GetMessageW; WL_TranslateMessage TranslateMessage; WL_DispatchMessageW DispatchMessageW; WL_PostQuitMessage PostQuitMessage; WL_SetWindowTextW SetWindowTextW; WL_SetFocus SetFocus; WL_GetKeyState GetKeyState; WL_RegisterHotKey RegisterHotKey; WL_UnregisterHotKey UnregisterHotKey; WL_MessageBoxW MessageBoxW; WL_DestroyWindow DestroyWindow; WL_MapVirtualKeyW MapVirtualKeyW; WL_GetKeyNameTextW GetKeyNameTextW; WL_SendMessageW SendMessageW;
+ void* user32; WL_RegisterClassExW RegisterClassExW; WL_CreateWindowExW CreateWindowExW; WL_DefWindowProcW DefWindowProcW; WL_ShowWindow ShowWindow; WL_UpdateWindow UpdateWindow; WL_GetMessageW GetMessageW; WL_TranslateMessage TranslateMessage; WL_DispatchMessageW DispatchMessageW; WL_PostQuitMessage PostQuitMessage; WL_SetWindowTextW SetWindowTextW; WL_SetFocus SetFocus; WL_GetKeyState GetKeyState; WL_RegisterHotKey RegisterHotKey; WL_UnregisterHotKey UnregisterHotKey; WL_MessageBoxW MessageBoxW; WL_DestroyWindow DestroyWindow; WL_MapVirtualKeyW MapVirtualKeyW; WL_GetKeyNameTextW GetKeyNameTextW; WL_SendMessageW SendMessageW; WL_BeginPaint BeginPaint; WL_EndPaint EndPaint; WL_GetClientRect GetClientRect; WL_FillRect FillRect; WL_SetTextColor SetTextColor; WL_SetBkMode SetBkMode; WL_DrawTextW DrawTextW; WL_SelectObject SelectObject; WL_Ellipse Ellipse; WL_MoveToEx MoveToEx; WL_LineTo LineTo; WL_InvalidateRect InvalidateRect; WL_SetCapture SetCapture; WL_ReleaseCapture ReleaseCapture; WL_FindWindowW FindWindowW; WL_SetForegroundWindow SetForegroundWindow; WL_PostMessageW PostMessageW; WL_SetWindowPos SetWindowPos; WL_ScreenToClient ScreenToClient;
  void* comdlg32; WL_GetOpenFileNameW GetOpenFileNameW;
  void* advapi32; WL_ConvertStringSecurityDescriptorToSecurityDescriptorW ConvertStringSecurityDescriptorToSecurityDescriptorW;
- void* gdi32; WL_GetStockObject GetStockObject;
+ void* gdi32; WL_GetStockObject GetStockObject; WL_CreateSolidBrush CreateSolidBrush; WL_CreatePen CreatePen; WL_DeleteObject DeleteObject; WL_CreateFontW CreateFontW;
  void* shell32; WL_ShellExecuteW ShellExecuteW;
 } WL_API;
 
@@ -135,6 +162,6 @@ static const WL_WCHAR wl_comdlg32_name[]={'c','o','m','d','l','g','3','2','.','d
 static const WL_WCHAR wl_advapi32_name[]={'a','d','v','a','p','i','3','2','.','d','l','l',0};
 static const WL_WCHAR wl_gdi32_name[]={'g','d','i','3','2','.','d','l','l',0};
 static const WL_WCHAR wl_shell32_name[]={'s','h','e','l','l','3','2','.','d','l','l',0};
-static int wl_init_gui(WL_API* a){if(!wl_init_kernel(a))return 0;a->user32=a->LoadLibraryW(wl_user32_name);a->comdlg32=a->LoadLibraryW(wl_comdlg32_name);a->advapi32=a->LoadLibraryW(wl_advapi32_name);a->gdi32=a->LoadLibraryW(wl_gdi32_name);a->shell32=a->LoadLibraryW(wl_shell32_name);if(!a->user32||!a->comdlg32||!a->advapi32||!a->gdi32||!a->shell32)return 0;WL_RESOLVE(a,RegisterClassExW,a->user32);WL_RESOLVE(a,CreateWindowExW,a->user32);WL_RESOLVE(a,DefWindowProcW,a->user32);WL_RESOLVE(a,ShowWindow,a->user32);WL_RESOLVE(a,UpdateWindow,a->user32);WL_RESOLVE(a,GetMessageW,a->user32);WL_RESOLVE(a,TranslateMessage,a->user32);WL_RESOLVE(a,DispatchMessageW,a->user32);WL_RESOLVE(a,PostQuitMessage,a->user32);WL_RESOLVE(a,SetWindowTextW,a->user32);WL_RESOLVE(a,SetFocus,a->user32);WL_RESOLVE(a,GetKeyState,a->user32);WL_RESOLVE(a,RegisterHotKey,a->user32);WL_RESOLVE(a,UnregisterHotKey,a->user32);WL_RESOLVE(a,MessageBoxW,a->user32);WL_RESOLVE(a,DestroyWindow,a->user32);WL_RESOLVE(a,MapVirtualKeyW,a->user32);WL_RESOLVE(a,GetKeyNameTextW,a->user32);WL_RESOLVE(a,SendMessageW,a->user32);WL_RESOLVE(a,GetOpenFileNameW,a->comdlg32);WL_RESOLVE(a,ConvertStringSecurityDescriptorToSecurityDescriptorW,a->advapi32);WL_RESOLVE(a,GetStockObject,a->gdi32);WL_RESOLVE(a,ShellExecuteW,a->shell32);return 1;}
+static int wl_init_gui(WL_API* a){if(!wl_init_kernel(a))return 0;a->user32=a->LoadLibraryW(wl_user32_name);a->comdlg32=a->LoadLibraryW(wl_comdlg32_name);a->advapi32=a->LoadLibraryW(wl_advapi32_name);a->gdi32=a->LoadLibraryW(wl_gdi32_name);a->shell32=a->LoadLibraryW(wl_shell32_name);if(!a->user32||!a->comdlg32||!a->advapi32||!a->gdi32||!a->shell32)return 0;WL_RESOLVE(a,RegisterClassExW,a->user32);WL_RESOLVE(a,CreateWindowExW,a->user32);WL_RESOLVE(a,DefWindowProcW,a->user32);WL_RESOLVE(a,ShowWindow,a->user32);WL_RESOLVE(a,UpdateWindow,a->user32);WL_RESOLVE(a,GetMessageW,a->user32);WL_RESOLVE(a,TranslateMessage,a->user32);WL_RESOLVE(a,DispatchMessageW,a->user32);WL_RESOLVE(a,PostQuitMessage,a->user32);WL_RESOLVE(a,SetWindowTextW,a->user32);WL_RESOLVE(a,SetFocus,a->user32);WL_RESOLVE(a,GetKeyState,a->user32);WL_RESOLVE(a,RegisterHotKey,a->user32);WL_RESOLVE(a,UnregisterHotKey,a->user32);WL_RESOLVE(a,MessageBoxW,a->user32);WL_RESOLVE(a,DestroyWindow,a->user32);WL_RESOLVE(a,MapVirtualKeyW,a->user32);WL_RESOLVE(a,GetKeyNameTextW,a->user32);WL_RESOLVE(a,SendMessageW,a->user32);WL_RESOLVE(a,BeginPaint,a->user32);WL_RESOLVE(a,EndPaint,a->user32);WL_RESOLVE(a,GetClientRect,a->user32);WL_RESOLVE(a,FillRect,a->user32);WL_RESOLVE(a,SetTextColor,a->user32);WL_RESOLVE(a,SetBkMode,a->user32);WL_RESOLVE(a,DrawTextW,a->user32);WL_RESOLVE(a,InvalidateRect,a->user32);WL_RESOLVE(a,SetCapture,a->user32);WL_RESOLVE(a,ReleaseCapture,a->user32);WL_RESOLVE(a,FindWindowW,a->user32);WL_RESOLVE(a,SetForegroundWindow,a->user32);WL_RESOLVE(a,PostMessageW,a->user32);WL_RESOLVE(a,SetWindowPos,a->user32);WL_RESOLVE(a,ScreenToClient,a->user32);WL_RESOLVE(a,GetOpenFileNameW,a->comdlg32);WL_RESOLVE(a,ConvertStringSecurityDescriptorToSecurityDescriptorW,a->advapi32);WL_RESOLVE(a,GetStockObject,a->gdi32);WL_RESOLVE(a,CreateSolidBrush,a->gdi32);WL_RESOLVE(a,CreatePen,a->gdi32);WL_RESOLVE(a,DeleteObject,a->gdi32);WL_RESOLVE(a,CreateFontW,a->gdi32);WL_RESOLVE(a,SelectObject,a->gdi32);WL_RESOLVE(a,Ellipse,a->gdi32);WL_RESOLVE(a,MoveToEx,a->gdi32);WL_RESOLVE(a,LineTo,a->gdi32);WL_RESOLVE(a,ShellExecuteW,a->shell32);return 1;}
 
 #endif
