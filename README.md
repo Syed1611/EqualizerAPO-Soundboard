@@ -2,7 +2,7 @@
 
 A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered audio directly into the processed microphone stream. It is designed to work without VB-Cable, Voicemeeter, or another virtual audio device.
 
-> Current recommended build: **v0.6.4**
+> Current recommended build: **v0.7.0**
 >
 > v0.3 and v0.4 are preserved as experimental history and are not recommended for normal use.
 
@@ -25,7 +25,7 @@ A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered 
 
 ## How it works
 
-Equalizer APO hosts `APOSoundboard_v0.6.4.dll` in the microphone processing chain. A small companion controller owns the UI, loaded samples and global hotkeys. The controller sends soundboard sample/control data to the VST over a **local named pipe**. The actual mic + soundboard mix happens inside the Equalizer APO VST processing path.
+Equalizer APO hosts `APOSoundboard_vx.x.x.dll` in the microphone processing chain. A small companion controller owns the UI, loaded samples and global hotkeys. The controller sends soundboard sample/control data to the VST over a **local named pipe**. The actual mic + soundboard mix happens inside the Equalizer APO VST processing path.
 
 The controller does **not** create a virtual microphone or virtual audio cable.
 
