@@ -9,10 +9,15 @@
 #define WS_VISIBLE 0x10000000u
 #define SS_LEFT 0x00000000u
 #define SW_SHOWNORMAL 1
-#define PIPE_CHUNK 512u
+#define PIPE_CHUNK_MAX 1024u
+#define PROTOCOL_VERSION 3u
+#define BUILD_VERSION 80700u
+#define PIPE_AUDIO_IDLE 1u
 #define RING_FRAMES 4096u
 #define RING_MASK (RING_FRAMES-1u)
-#define TARGET_FILL 1024u
+#define TARGET_BASE 1024u
+#define TARGET_MAX 2048u
+#define TARGET_STEP 256u
 #define INFINITE 0xffffffffu
 #define WAIT_TIMEOUT 258u
 #define GENERIC_READ 0x80000000u
@@ -37,14 +42,16 @@ enum { effOpen=0,effClose=1,effGetParamLabel=6,effGetParamDisplay=7,effGetParamN
 typedef struct { WL_I16 top,left,bottom,right; } VstRect;
 
 #pragma pack(push,1)
-typedef struct { WL_U32 magic,version,sampleRate,channels; } PipeHello;
-typedef struct { WL_U32 magic,frames; } PipeRequest;
-typedef struct { WL_U32 magic,frames,channels; } PipeAudio;
+typedef struct { WL_U32 magic,version,build,sampleRate,channels; } PipeHello;
+typedef struct { WL_U32 magic,version,build,flags; } PipeAck;
+typedef struct { WL_U32 magic,frames,sampleRate,blockSize,ringFill,targetFill,underruns,clips,peakMilli; } PipeRequest;
+typedef struct { WL_U32 magic,frames,channels,flags; } PipeAudio;
 #pragma pack(pop)
 #define M_HELLO 0x31425341u
 #define M_REQ   0x51525341u
 #define M_AUDIO 0x44525341u
-static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','_','v','1',0 };
+#define M_ACK   0x4b435341u
+static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','_','v','2',0 };
 
 typedef struct {
  AEffect effect;
@@ -55,7 +62,17 @@ typedef struct {
  WL_HANDLE thread;
  volatile WL_HANDLE pipe;
  volatile WL_U32 sampleRate;
+ volatile WL_U32 blockSize;
  volatile WL_U32 rpos,wpos;
+ volatile WL_U32 targetFill;
+ volatile WL_U32 underruns;
+ volatile WL_U32 clipCount;
+ volatile WL_U32 peakMilli;
+ volatile WL_U64 stableFrames;
+ volatile WL_I32 streamReady;
+ volatile WL_I32 sourceIdle;
+ volatile WL_I32 boardIdle;
+ volatile WL_I32 protocolReady;
  float ring[RING_FRAMES*2];
  float params[3];
  VstRect editorRect;
@@ -85,30 +102,90 @@ static void acpy(char* d,const char*s,WL_U32 cap){WL_U32 i=0;if(!d||!cap)return;
 static void utoa3(char* d,int v){ if(v<0)v=0;if(v>999)v=999; if(v>=100){d[0]=(char)('0'+v/100);d[1]=(char)('0'+(v/10)%10);d[2]=(char)('0'+v%10);d[3]=0;} else if(v>=10){d[0]=(char)('0'+v/10);d[1]=(char)('0'+v%10);d[2]=0;} else {d[0]=(char)('0'+v);d[1]=0;} }
 static int exact_write(Plugin*p,WL_HANDLE h,const void*buf,WL_U32 bytes){const WL_U8*s=(const WL_U8*)buf;WL_U32 done=0;while(done<bytes&&p->running){WL_DWORD n=0;if(!p->api.WriteFile(h,s+done,bytes-done,&n,0)||n==0)return 0;done+=n;}return done==bytes;}
 static int exact_read(Plugin*p,WL_HANDLE h,void*buf,WL_U32 bytes){WL_U8*d=(WL_U8*)buf;WL_U32 done=0;while(done<bytes&&p->running){WL_DWORD n=0;if(!p->api.ReadFile(h,d+done,bytes-done,&n,0)||n==0)return 0;done+=n;}return done==bytes;}
-static WL_DWORD WL_CALLBACK pipe_thread(void* ctx){Plugin*p=(Plugin*)ctx;float* temp=(float*)p->api.HeapAlloc(p->api.GetProcessHeap(),0,PIPE_CHUNK*2*sizeof(float));if(!temp){p->running=0;return 0;}
+static WL_U32 choose_request_frames(Plugin*p){
+ WL_U32 b=__atomic_load_n(&p->blockSize,__ATOMIC_RELAXED);
+ WL_U32 n=b<=64?128u:(b<=128?256u:(b<=256?512u:1024u));
+ if(n>PIPE_CHUNK_MAX)n=PIPE_CHUNK_MAX;
+ if(n<64)n=64;
+ return n;
+}
+static void reset_ring_idle(Plugin*p,int idle){
+ __atomic_store_n(&p->rpos,0,__ATOMIC_RELEASE);
+ __atomic_store_n(&p->wpos,0,__ATOMIC_RELEASE);
+ __atomic_store_n(&p->sourceIdle,idle,__ATOMIC_RELEASE);
+ __atomic_store_n(&p->boardIdle,idle,__ATOMIC_RELEASE);
+ __atomic_store_n(&p->streamReady,idle?1:0,__ATOMIC_RELEASE);
+}
+static WL_DWORD WL_CALLBACK pipe_thread(void* ctx){
+ Plugin*p=(Plugin*)ctx;
+ float* temp=(float*)p->api.HeapAlloc(p->api.GetProcessHeap(),0,PIPE_CHUNK_MAX*2*sizeof(float));
+ if(!temp){p->running=0;return 0;}
  while(p->running){
   if(!p->api.WaitNamedPipeW(PIPE_NAME,250)){p->api.Sleep(100);continue;}
-  WL_HANDLE h=p->api.CreateFileW(PIPE_NAME,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);if(h==WL_INVALID_HANDLE_VALUE){p->api.Sleep(100);continue;}p->pipe=h;
-  PipeHello hello={M_HELLO,1,p->sampleRate?p->sampleRate:48000,2}; if(!exact_write(p,h,&hello,sizeof(hello))){p->api.CloseHandle(h);p->pipe=0;continue;}
-  while(p->running){WL_U32 r=__atomic_load_n(&p->rpos,__ATOMIC_ACQUIRE),w=__atomic_load_n(&p->wpos,__ATOMIC_ACQUIRE);WL_U32 avail=w-r;if(avail>=TARGET_FILL){p->api.Sleep(5);continue;}WL_U32 freef=RING_FRAMES-avail;if(freef<PIPE_CHUNK){p->api.Sleep(1);continue;}
-   PipeRequest rq={M_REQ,PIPE_CHUNK}; if(!exact_write(p,h,&rq,sizeof(rq)))break;PipeAudio ah;if(!exact_read(p,h,&ah,sizeof(ah)))break;if(ah.magic!=M_AUDIO||ah.frames==0||ah.frames>PIPE_CHUNK||(ah.channels!=1&&ah.channels!=2))break;WL_U32 vals=ah.frames*ah.channels;if(!exact_read(p,h,temp,vals*sizeof(float)))break;
-   w=__atomic_load_n(&p->wpos,__ATOMIC_RELAXED);for(WL_U32 i=0;i<ah.frames;i++){WL_U32 idx=(w+i)&RING_MASK;float l=temp[i*ah.channels],rr=ah.channels==2?temp[i*2+1]:l;p->ring[idx*2]=l;p->ring[idx*2+1]=rr;}__atomic_store_n(&p->wpos,w+ah.frames,__ATOMIC_RELEASE);
+  WL_HANDLE h=p->api.CreateFileW(PIPE_NAME,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+  if(h==WL_INVALID_HANDLE_VALUE){p->api.Sleep(100);continue;}
+  p->pipe=h;
+  reset_ring_idle(p,0);
+  __atomic_store_n(&p->protocolReady,0,__ATOMIC_RELEASE);
+  PipeHello hello={M_HELLO,PROTOCOL_VERSION,BUILD_VERSION,p->sampleRate?p->sampleRate:48000,2};
+  if(!exact_write(p,h,&hello,sizeof(hello))){p->api.CloseHandle(h);p->pipe=0;continue;}
+  PipeAck ack;
+  if(!exact_read(p,h,&ack,sizeof(ack))||ack.magic!=M_ACK||ack.version!=PROTOCOL_VERSION){p->api.CloseHandle(h);p->pipe=0;p->api.Sleep(250);continue;}
+  __atomic_store_n(&p->protocolReady,1,__ATOMIC_RELEASE);
+  WL_U32 idlePolls=0;
+  while(p->running){
+   WL_U32 r=__atomic_load_n(&p->rpos,__ATOMIC_ACQUIRE),w=__atomic_load_n(&p->wpos,__ATOMIC_ACQUIRE),avail=w-r;
+   WL_U32 target=__atomic_load_n(&p->targetFill,__ATOMIC_RELAXED);
+   int srcIdle=__atomic_load_n(&p->sourceIdle,__ATOMIC_ACQUIRE);
+   if(srcIdle&&avail==0){__atomic_store_n(&p->boardIdle,1,__ATOMIC_RELEASE);__atomic_store_n(&p->streamReady,1,__ATOMIC_RELEASE);p->api.Sleep(idlePolls<125?2:6);}
+   else if(avail>=target){p->api.Sleep(4);continue;}
+   WL_U32 req=choose_request_frames(p),freef=RING_FRAMES-avail;
+   if(freef<req){if(freef<64){p->api.Sleep(1);continue;}req=freef;}
+   WL_U32 peak=__atomic_exchange_n(&p->peakMilli,0,__ATOMIC_ACQ_REL);
+   PipeRequest rq={M_REQ,req,p->sampleRate,p->blockSize,avail,target,__atomic_load_n(&p->underruns,__ATOMIC_RELAXED),__atomic_load_n(&p->clipCount,__ATOMIC_RELAXED),peak};
+   if(!exact_write(p,h,&rq,sizeof(rq)))break;
+   PipeAudio ah;if(!exact_read(p,h,&ah,sizeof(ah)))break;
+   if(ah.magic!=M_AUDIO||ah.frames>req||(ah.channels!=1&&ah.channels!=2))break;
+   if((ah.flags&PIPE_AUDIO_IDLE)&&ah.frames==0){idlePolls++;__atomic_store_n(&p->sourceIdle,1,__ATOMIC_RELEASE);if(avail==0)__atomic_store_n(&p->boardIdle,1,__ATOMIC_RELEASE);continue;}
+   if(ah.frames==0)break;
+   WL_U32 vals=ah.frames*ah.channels;if(!exact_read(p,h,temp,vals*sizeof(float)))break;
+   idlePolls=0;__atomic_store_n(&p->sourceIdle,0,__ATOMIC_RELEASE);__atomic_store_n(&p->boardIdle,0,__ATOMIC_RELEASE);
+   w=__atomic_load_n(&p->wpos,__ATOMIC_RELAXED);
+   for(WL_U32 i=0;i<ah.frames;i++){WL_U32 idx=(w+i)&RING_MASK;float l=temp[i*ah.channels],rr=ah.channels==2?temp[i*2+1]:l;p->ring[idx*2]=l;p->ring[idx*2+1]=rr;}
+   __atomic_store_n(&p->wpos,w+ah.frames,__ATOMIC_RELEASE);__atomic_store_n(&p->streamReady,1,__ATOMIC_RELEASE);
   }
-  p->api.CloseHandle(h);p->pipe=0;__atomic_store_n(&p->rpos,0,__ATOMIC_RELEASE);__atomic_store_n(&p->wpos,0,__ATOMIC_RELEASE);p->api.Sleep(50);
+  p->api.CloseHandle(h);p->pipe=0;__atomic_store_n(&p->protocolReady,0,__ATOMIC_RELEASE);reset_ring_idle(p,1);__atomic_store_n(&p->targetFill,TARGET_BASE,__ATOMIC_RELEASE);__atomic_store_n(&p->stableFrames,0,__ATOMIC_RELEASE);p->api.Sleep(50);
  }
- p->api.HeapFree(p->api.GetProcessHeap(),0,temp);return 0;}
+ p->api.HeapFree(p->api.GetProcessHeap(),0,temp);return 0;
+}
 static int ensure_api(Plugin*p){if(p->apiReady)return 1;if(!wl_init_kernel(&p->api))return 0;p->apiReady=1;return 1;}
-static void start_stream(Plugin*p){if(!ensure_api(p))return;WL_I32 expected=0;if(!__atomic_compare_exchange_n(&p->running,&expected,1,0,__ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE))return;__atomic_store_n(&p->rpos,0,__ATOMIC_RELEASE);__atomic_store_n(&p->wpos,0,__ATOMIC_RELEASE);p->thread=p->api.CreateThread(0,0,pipe_thread,p,0,0);if(!p->thread)p->running=0;}
+static void start_stream(Plugin*p){if(!ensure_api(p))return;WL_I32 expected=0;if(!__atomic_compare_exchange_n(&p->running,&expected,1,0,__ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE))return;__atomic_store_n(&p->rpos,0,__ATOMIC_RELEASE);__atomic_store_n(&p->wpos,0,__ATOMIC_RELEASE);__atomic_store_n(&p->targetFill,TARGET_BASE,__ATOMIC_RELEASE);__atomic_store_n(&p->stableFrames,0,__ATOMIC_RELEASE);__atomic_store_n(&p->streamReady,0,__ATOMIC_RELEASE);__atomic_store_n(&p->sourceIdle,0,__ATOMIC_RELEASE);__atomic_store_n(&p->boardIdle,0,__ATOMIC_RELEASE);__atomic_store_n(&p->protocolReady,0,__ATOMIC_RELEASE);p->thread=p->api.CreateThread(0,0,pipe_thread,p,0,0);if(!p->thread)p->running=0;}
 static int stop_stream(Plugin*p){if(!p->apiReady)return 1;WL_I32 wasRunning=__atomic_exchange_n(&p->running,0,__ATOMIC_ACQ_REL);WL_HANDLE h=(WL_HANDLE)p->pipe;if(wasRunning&&h)p->api.CancelIoEx(h,0);if(p->thread){WL_DWORD wr=p->api.WaitForSingleObject(p->thread,5000);if(wr==WAIT_TIMEOUT)return 0;p->api.CloseHandle(p->thread);p->thread=0;}p->pipe=0;return 1;}
 
-static void WL_CALLBACK process_replacing(AEffect*e,float**in,float**out,WL_I32 frames){Plugin*p=P(e);float mic=p->params[1]*2.0f,board=p->params[0]*2.0f;int limit=p->params[2]>=0.5f;WL_U32 r=__atomic_load_n(&p->rpos,__ATOMIC_RELAXED),w=__atomic_load_n(&p->wpos,__ATOMIC_ACQUIRE);WL_U32 avail=w-r;
- for(WL_I32 i=0;i<frames;i++){float s0=0,s1=0;if((WL_U32)i<avail){WL_U32 idx=(r+(WL_U32)i)&RING_MASK;s0=p->ring[idx*2];s1=p->ring[idx*2+1];}float a=(in&&in[0]?in[0][i]:0)*mic+s0*board;float b=(in&&in[1]?in[1][i]:0)*mic+s1*board;if(limit){a=clampf(a,-1,1);b=clampf(b,-1,1);}if(out&&out[0])out[0][i]=a;if(out&&out[1])out[1][i]=b;}
- WL_U32 used=(WL_U32)frames<avail?(WL_U32)frames:avail;__atomic_store_n(&p->rpos,r+used,__ATOMIC_RELEASE);
+static void peak_update(Plugin*p,WL_U32 peak){WL_U32 old=__atomic_load_n(&p->peakMilli,__ATOMIC_RELAXED);while(peak>old&&!__atomic_compare_exchange_n(&p->peakMilli,&old,peak,1,__ATOMIC_RELEASE,__ATOMIC_RELAXED)){} }
+static float flush_tiny(float x){return (x>-1.0e-20f&&x<1.0e-20f)?0.0f:x;}
+static void WL_CALLBACK process_replacing(AEffect*e,float**in,float**out,WL_I32 frames){
+ Plugin*p=P(e);float mic=p->params[1]*2.0f,board=p->params[0]*2.0f;int limit=p->params[2]>=0.5f;
+ WL_U32 r=__atomic_load_n(&p->rpos,__ATOMIC_RELAXED),w=__atomic_load_n(&p->wpos,__ATOMIC_ACQUIRE),avail=w-r,peak=0,clipped=0;
+ int idle=__atomic_load_n(&p->boardIdle,__ATOMIC_ACQUIRE);
+ if(!idle&&__atomic_load_n(&p->streamReady,__ATOMIC_ACQUIRE)&&frames>0){
+  if(avail<(WL_U32)frames){__atomic_add_fetch(&p->underruns,1,__ATOMIC_RELAXED);WL_U32 target=__atomic_load_n(&p->targetFill,__ATOMIC_RELAXED);if(target<TARGET_MAX){target+=TARGET_STEP;if(target>TARGET_MAX)target=TARGET_MAX;__atomic_store_n(&p->targetFill,target,__ATOMIC_RELAXED);}__atomic_store_n(&p->stableFrames,0,__ATOMIC_RELAXED);}
+  else{WL_U64 stable=__atomic_add_fetch(&p->stableFrames,(WL_U64)frames,__ATOMIC_RELAXED);WL_U64 threshold=(WL_U64)(p->sampleRate?p->sampleRate:48000)*10ull;if(stable>=threshold){WL_U32 target=__atomic_load_n(&p->targetFill,__ATOMIC_RELAXED);if(target>TARGET_BASE){target=target>TARGET_BASE+TARGET_STEP?target-TARGET_STEP:TARGET_BASE;__atomic_store_n(&p->targetFill,target,__ATOMIC_RELAXED);}__atomic_store_n(&p->stableFrames,0,__ATOMIC_RELAXED);}}
+ }
+ for(WL_I32 i=0;i<frames;i++){
+  float s0=0,s1=0;if(!idle&&(WL_U32)i<avail){WL_U32 idx=(r+(WL_U32)i)&RING_MASK;s0=p->ring[idx*2];s1=p->ring[idx*2+1];}
+  float a=flush_tiny((in&&in[0]?in[0][i]:0)*mic+s0*board),b=flush_tiny((in&&in[1]?in[1][i]:0)*mic+s1*board);
+  float aa=a<0?-a:a,bb=b<0?-b:b,m=aa>bb?aa:bb;WL_U32 pm=(WL_U32)(m*1000.0f+0.5f);if(pm>peak)peak=pm;if(m>1.0f)clipped++;
+  if(limit){a=clampf(a,-1,1);b=clampf(b,-1,1);}if(out&&out[0])out[0][i]=a;if(out&&out[1])out[1][i]=b;
+ }
+ if(peak>9999u)peak=9999u;peak_update(p,peak);if(clipped)__atomic_add_fetch(&p->clipCount,clipped,__ATOMIC_RELAXED);
+ WL_U32 used=!idle?((WL_U32)frames<avail?(WL_U32)frames:avail):0;__atomic_store_n(&p->rpos,r+used,__ATOMIC_RELEASE);
+ if(__atomic_load_n(&p->sourceIdle,__ATOMIC_ACQUIRE)&&r+used==w)__atomic_store_n(&p->boardIdle,1,__ATOMIC_RELEASE);
 }
 static void WL_CALLBACK process_accum(AEffect*e,float**in,float**out,WL_I32 frames){process_replacing(e,in,out,frames);}
 static void WL_CALLBACK set_param(AEffect*e,WL_I32 index,float v){Plugin*p=P(e);if(index>=0&&index<3)p->params[index]=clampf(v,0,1);}
 static float WL_CALLBACK get_param(AEffect*e,WL_I32 index){Plugin*p=P(e);return (index>=0&&index<3)?p->params[index]:0;}
-static WL_IPTR WL_CALLBACK dispatch(AEffect*e,WL_I32 op,WL_I32 index,WL_IPTR value,void*ptr,float opt){Plugin*p=P(e);switch(op){case effOpen:return 0;case effClose:{if(p->editorChild&&p->editorReady&&p->editorApi.DestroyWindow){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}if(stop_stream(p)){if(ensure_api(p))p->api.HeapFree(p->api.GetProcessHeap(),0,p);}return 0;}case effSetSampleRate:p->sampleRate=(WL_U32)(opt>8000?opt:48000);return 0;case effSetBlockSize:return 0;case effMainsChanged:if(value)start_stream(p);else (void)stop_stream(p);return 0;case effEditGetRect:if(ptr){*(VstRect**)ptr=&p->editorRect;return 1;}return 0;case effEditOpen:{if(!ptr)return 0;if(!p->editorReady){if(!wl_init_gui(&p->editorApi))return 0;p->editorReady=1;}if(p->editorChild){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}p->editorChild=p->editorApi.CreateWindowExW(0,STATIC_CLASS,PANEL_TEXT,WS_CHILD|WS_VISIBLE|SS_LEFT,12,12,496,80,(WL_HWND)ptr,0,(WL_HINSTANCE)p->editorApi.GetModuleHandleW(0),0);launch_controller(p);return 1;}case effEditClose:if(p->editorChild&&p->editorReady&&p->editorApi.DestroyWindow){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}return 1;case effEditIdle:return 1;case effStartProcess:start_stream(p);return 1;case effStopProcess:(void)stop_stream(p);return 1;case effGetParamName:if(ptr){acpy((char*)ptr,index==0?"Board":index==1?"Mic":index==2?"Limiter":"",32);}return 1;case effGetParamLabel:if(ptr)acpy((char*)ptr,index<2?"%":"",16);return 1;case effGetParamDisplay:if(ptr){if(index<2)utoa3((char*)ptr,(int)(p->params[index]*200.0f+0.5f));else acpy((char*)ptr,p->params[2]>=0.5f?"On":"Off",16);}return 1;case effGetEffectName:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorString:if(ptr)acpy((char*)ptr,"OpenAI Build",64);return 1;case effGetProductString:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorVersion:return 60400;case effGetVstVersion:return 2400;case effGetPlugCategory:return 1;case effCanDo:return 0;default:return 0;}}
+static WL_IPTR WL_CALLBACK dispatch(AEffect*e,WL_I32 op,WL_I32 index,WL_IPTR value,void*ptr,float opt){Plugin*p=P(e);switch(op){case effOpen:return 0;case effClose:{if(p->editorChild&&p->editorReady&&p->editorApi.DestroyWindow){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}if(stop_stream(p)){if(ensure_api(p))p->api.HeapFree(p->api.GetProcessHeap(),0,p);}return 0;}case effSetSampleRate:p->sampleRate=(WL_U32)(opt>8000?opt:48000);return 0;case effSetBlockSize:p->blockSize=value>0?(WL_U32)value:0;return 0;case effMainsChanged:if(value)start_stream(p);else (void)stop_stream(p);return 0;case effEditGetRect:if(ptr){*(VstRect**)ptr=&p->editorRect;return 1;}return 0;case effEditOpen:{if(!ptr)return 0;if(!p->editorReady){if(!wl_init_gui(&p->editorApi))return 0;p->editorReady=1;}if(p->editorChild){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}p->editorChild=p->editorApi.CreateWindowExW(0,STATIC_CLASS,PANEL_TEXT,WS_CHILD|WS_VISIBLE|SS_LEFT,12,12,496,80,(WL_HWND)ptr,0,(WL_HINSTANCE)p->editorApi.GetModuleHandleW(0),0);launch_controller(p);return 1;}case effEditClose:if(p->editorChild&&p->editorReady&&p->editorApi.DestroyWindow){p->editorApi.DestroyWindow(p->editorChild);p->editorChild=0;}return 1;case effEditIdle:return 1;case effStartProcess:start_stream(p);return 1;case effStopProcess:(void)stop_stream(p);return 1;case effGetParamName:if(ptr){acpy((char*)ptr,index==0?"Board":index==1?"Mic":index==2?"Limiter":"",32);}return 1;case effGetParamLabel:if(ptr)acpy((char*)ptr,index<2?"%":"",16);return 1;case effGetParamDisplay:if(ptr){if(index<2)utoa3((char*)ptr,(int)(p->params[index]*200.0f+0.5f));else acpy((char*)ptr,p->params[2]>=0.5f?"On":"Off",16);}return 1;case effGetEffectName:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorString:if(ptr)acpy((char*)ptr,"Syed1611",64);return 1;case effGetProductString:if(ptr)acpy((char*)ptr,"APO Soundboard",64);return 1;case effGetVendorVersion:return 80000;case effGetVstVersion:return 2400;case effGetPlugCategory:return 1;case effCanDo:return 0;default:return 0;}}
 
-__declspec(dllexport) AEffect* WL_CALLBACK VSTPluginMain(audioMasterCallback host){WL_API api;if(!wl_init_kernel(&api))return 0;Plugin*p=(Plugin*)api.HeapAlloc(api.GetProcessHeap(),0,sizeof(Plugin));if(!p)return 0;memset(p,0,sizeof(*p));p->api=api;p->apiReady=1;p->host=host;p->sampleRate=48000;p->params[0]=0.5f;p->params[1]=0.5f;p->params[2]=1.0f;p->editorRect.top=0;p->editorRect.left=0;p->editorRect.bottom=104;p->editorRect.right=520;AEffect*e=&p->effect;e->magic=VST_MAGIC;e->dispatcher=dispatch;e->process=process_accum;e->setParameter=set_param;e->getParameter=get_param;e->numPrograms=1;e->numParams=3;e->numInputs=2;e->numOutputs=2;e->flags=EFF_HAS_EDITOR|EFF_CAN_REPLACING;e->object=p;e->uniqueID=PLUGIN_ID;e->version=60300;e->processReplacing=process_replacing;return e;}
+__declspec(dllexport) AEffect* WL_CALLBACK VSTPluginMain(audioMasterCallback host){WL_API api;if(!wl_init_kernel(&api))return 0;Plugin*p=(Plugin*)api.HeapAlloc(api.GetProcessHeap(),0,sizeof(Plugin));if(!p)return 0;memset(p,0,sizeof(*p));p->api=api;p->apiReady=1;p->host=host;p->sampleRate=48000;p->blockSize=0;p->targetFill=TARGET_BASE;p->params[0]=0.5f;p->params[1]=0.5f;p->params[2]=1.0f;p->editorRect.top=0;p->editorRect.left=0;p->editorRect.bottom=104;p->editorRect.right=520;AEffect*e=&p->effect;e->magic=VST_MAGIC;e->dispatcher=dispatch;e->process=process_accum;e->setParameter=set_param;e->getParameter=get_param;e->numPrograms=1;e->numParams=3;e->numInputs=2;e->numOutputs=2;e->flags=EFF_HAS_EDITOR|EFF_CAN_REPLACING;e->object=p;e->uniqueID=PLUGIN_ID;e->version=80700;e->processReplacing=process_replacing;return e;}
 WL_BOOL WL_CALLBACK DllMain(void*h,WL_DWORD reason,void*reserved){(void)reserved;if(reason==1)g_dll_module=(WL_HMODULE)h;return WL_TRUE;}

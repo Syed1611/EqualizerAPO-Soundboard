@@ -1,20 +1,21 @@
-APO Soundboard v0.6.4 build checks
-=================================
+APO Soundboard v0.8.7 audit
+============================
 
-- APOSoundboard_v0.6.4.dll: PE32+ x86-64 Windows DLL.
-- APOSoundboardController.exe: PE32+ x86-64 Windows GUI executable.
-- DLL export table contains VSTPluginMain.
-- Clang static analyzer reported 0 diagnostics for plugin.c.
-- Clang static analyzer reported 0 diagnostics for controller.c.
+Focused diagnostics-page rendering fix based on v0.8.6.
 
-Control changes:
-- Pitch storage remains in half-semitone units, but is clamped to -24..+24
-  half-steps, corresponding to -12.0..+12.0 semitones.
-- Fine pitch resolution remains 0.5 st.
-- Fine volume resolution remains 0.5 percentage point.
-- Volume has magnetic major notches every 25 percentage points.
-- Pitch has magnetic major notches every 3 semitones (25% of either 12-st side).
-- Both bars draw nine external tick marks matching their major snap positions.
+Checks performed:
+- clang --analyze: controller.c: no diagnostics
+- clang --analyze: plugin.c: no diagnostics
+- controller strong warning build: no warnings
+- plugin strong warning build: only two benign unused helper warnings in winlite.h
+- x64 PE output verified
+- VSTPluginMain export verified
 
-All v0.6.3 hotkey-capture fixes, diagnostics, backup/recovery, and stability
-hardening remain unchanged.
+UI fix notes:
+- page-specific controls are always hidden/shown explicitly on layout
+- inactive-page pixels are cleared while both page control sets are hidden
+- parent and active child windows are synchronously repainted after a page switch
+- diagnostics uses 3 columns at normal desktop widths, 2 at narrower widths
+- diagnostic cards are clamped to the visible client area
+
+The v0.8.6 WinMM-compatible monitor backend is unchanged.

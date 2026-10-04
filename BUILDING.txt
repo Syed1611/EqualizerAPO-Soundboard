@@ -1,7 +1,19 @@
-Requires LLVM clang and lld-link. From the package src directory:
+APO Soundboard v0.8.7 build instructions
+=========================================
 
-clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboard_v0.6.4.dll plugin.obj
+Requires LLVM clang and lld-link.
 
-clang -target x86_64-pc-windows-msvc -O2 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
+From the package src directory:
+
+clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
+lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboard_v0.8.7.dll plugin.obj
+
+clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
 lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardController.exe controller.obj
+
+The project uses a small local VST2 ABI subset instead of bundling the Steinberg
+SDK.
+
+WAV decoding is built into the controller. Compressed formats use Windows Media
+Foundation. Local soundboard monitoring prefers the WinMM waveOut path used in
+v0.8.1/v0.8.2; the later WASAPI code is retained as a fallback.
