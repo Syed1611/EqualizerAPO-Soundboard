@@ -43,17 +43,35 @@ jobs:
       - name: Bootstrap dependencies with Qt 6.7.2
         shell: pwsh
         run: |
-          .\eapo\scripts\bootstrap-third-party.ps1 -Configuration Release -WithQt -QtVersion "6.7.2" -QtArch "win64_msvc2022_64"
+          Push-Location .\eapo
+          try {
+            .\scripts\bootstrap-third-party.ps1 -Configuration Release -WithQt -QtVersion "6.7.2" -QtArch "win64_msvc2022_64"
+          }
+          finally {
+            Pop-Location
+          }
 
       - name: Build Equalizer APO native dependencies
         shell: pwsh
         run: |
-          .\eapo\build-local-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+          Push-Location .\eapo
+          try {
+            .\build-local-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+          }
+          finally {
+            Pop-Location
+          }
 
       - name: Build Configuration Editor
         shell: pwsh
         run: |
-          .\eapo\scripts\build-qt-apps-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+          Push-Location .\eapo
+          try {
+            .\scripts\build-qt-apps-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+          }
+          finally {
+            Pop-Location
+          }
 
       - name: Package variant
         shell: pwsh
