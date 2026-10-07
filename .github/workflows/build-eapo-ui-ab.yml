@@ -19,7 +19,7 @@ jobs:
             label: REMOVE
           - variant: b
             label: HIDE
-    runs-on: windows-2025
+    runs-on: windows-2022
 
     steps:
       - name: Checkout AppMic repo
