@@ -40,16 +40,29 @@ jobs:
         run: |
           python tools/patch_eapo_ui.py eapo "${{ matrix.variant }}"
 
-      - name: Bootstrap dependencies with Qt 6.7.2
+      - name: Bootstrap non-Qt dependencies
         shell: pwsh
         run: |
           Push-Location .\eapo
           try {
-            .\scripts\bootstrap-third-party.ps1 -Configuration Release -WithQt -QtVersion "6.7.2" -QtArch "win64_msvc2022_64"
+            .\scripts\bootstrap-third-party.ps1 -Configuration Release
           }
           finally {
             Pop-Location
           }
+
+      - name: Install Qt 6.7.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+          dir: '${{ github.workspace }}\Qt'
+          modules: 'qtsvg'
+          install-deps: 'true'
+          set-env: 'true'
+          setup-python: 'false'
 
       - name: Build Equalizer APO native dependencies
         shell: pwsh
@@ -67,7 +80,7 @@ jobs:
         run: |
           Push-Location .\eapo
           try {
-            .\scripts\build-qt-apps-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+            .\scripts\build-qt-apps-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise" -QtRoot "${{ github.workspace }}\Qt\6.7.2\msvc2019_64"
           }
           finally {
             Pop-Location
