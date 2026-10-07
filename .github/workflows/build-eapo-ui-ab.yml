@@ -1,0 +1,104 @@
+name: Build AppMic Equalizer APO UI A-B
+
+on:
+  push:
+    branches:
+      - eapo-ui-ab-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: a
+            label: REMOVE
+          - variant: b
+            label: HIDE
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout AppMic repo
+        uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Clone Equalizer APO 1.4.2-compatible source
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/Mixomo/EqAPO64_with_VST3_support.git eapo
+
+      - name: Patch AppMic host UI variant
+        shell: pwsh
+        run: |
+          python tools/patch_eapo_ui.py eapo "${{ matrix.variant }}"
+
+      - name: Bootstrap dependencies with Qt 6.7.2
+        shell: pwsh
+        run: |
+          .\eapo\scripts\bootstrap-third-party.ps1 -Configuration Release -WithQt -QtVersion "6.7.2" -QtArch "win64_msvc2022_64"
+
+      - name: Build Equalizer APO native dependencies
+        shell: pwsh
+        run: |
+          .\eapo\build-local-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+
+      - name: Build Configuration Editor
+        shell: pwsh
+        run: |
+          .\eapo\scripts\build-qt-apps-x64.ps1 -Configuration Release -VisualStudioEdition "Enterprise"
+
+      - name: Package variant
+        shell: pwsh
+        run: |
+          $pkg = "package"
+          New-Item -ItemType Directory -Force -Path $pkg | Out-Null
+          Copy-Item ".\eapo\x64\Release\Editor.exe" "$pkg\Editor.exe" -Force
+          New-Item -ItemType Directory -Force -Path "$pkg\source" | Out-Null
+          Copy-Item ".\eapo\Editor\guis\VSTPluginFilterGUI.cpp" "$pkg\source\" -Force
+          Copy-Item ".\eapo\Editor\guis\VSTPluginFilterGUIDialog.cpp" "$pkg\source\" -Force
+          Copy-Item ".\eapo\LICENSE" "$pkg\LICENSE.txt" -Force -ErrorAction SilentlyContinue
+          @"
+          AppMic Equalizer APO UI test v0.2.5${{ matrix.variant }} (${{ matrix.label }})
+
+          Target:
+          - Equalizer APO Configuration Editor, x64
+          - AppMic panels only (detected by VST effect name starting with "AppMic")
+          - Built against Qt 6.7.2
+
+          What this changes:
+          - Forces Equalizer APO's autoApplyDialog OFF for AppMic.
+          - Does not change the AppMic VST DLL or its audio engine.
+
+          Variant A (REMOVE):
+          - Removes/deletes the bottom QDialogButtonBox and autoApplyCheckBox from the AppMic VST dialog.
+
+          Variant B (HIDE):
+          - Keeps those Qt controls alive but hides them.
+
+          Test installation:
+          1. Close Equalizer APO Configuration Editor.
+          2. Go to the Equalizer APO installation folder.
+          3. Back up the original Editor.exe.
+          4. Replace only Editor.exe with this file.
+          5. Keep using your known-good AppMic v0.2.4 DLL.
+          6. Test opening/closing the AppMic panel, START/STOP, and streaming.
+          7. Restore the original Editor.exe after testing if needed.
+
+          This is a test build, not an official Equalizer APO release.
+          "@ | Set-Content -Encoding UTF8 "$pkg\README.txt"
+
+      - name: Upload variant
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppMic-EAPO-v0.2.5${{ matrix.variant }}-${{ matrix.label }}
+          path: package
+          if-no-files-found: error
+          retention-days: 14
