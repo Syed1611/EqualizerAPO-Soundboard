@@ -1,12 +1,10 @@
-APO Soundboard v0.8.8 build audit
-- Controller and VST: PE32+ x86-64 Windows binaries.
-- VST exports VSTPluginMain.
-- Controller -O3 strong-warning build: no warnings.
-- VST -O3 strong-warning build: two unused helper warnings in winlite.h.
-- Controller and plugin static analyzer: no diagnostics.
-- Source still uses no sockets, downloader, autorun/persistence, credentials,
-  process injection or GPU graphics API.
-- Uses dynamic Win32 import resolution, which is unusual and may trigger some
-  antivirus heuristics; this is not an AV certification.
-- No Windows GUI/Equalizer APO/WASAPI hardware runtime was available here.
-- Review/restore from config_v05.bin.bak if a future migration causes issues.
+APO Soundboard v0.8.9 — static build verification
+
+- Both outputs compiled as Windows PE32+ x86-64.
+- VST DLL export table contains VSTPluginMain.
+- Clang -Wall -Wextra -Wpedantic controller compile: no diagnostics.
+- Clang plugin compile: two unused helper warnings from winlite.h.
+- Analyzer: controller and plugin completed without diagnostics using
+  -Xanalyzer -analyzer-config ipa=none for controller.
+- No Windows or Equalizer APO runtime smoke test was possible here.
+- Native Ogg Vorbis/Opus decoding is NOT implemented in this version.
