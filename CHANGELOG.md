@@ -2,7 +2,52 @@
 
 All notable project changes are recorded here. Experimental and superseded releases are kept in the history instead of being silently removed.
 
-## [0.8.7] - Current stable
+## [0.9.0] - Dark Mode & UI Polish
+
+### Added
+- Light/Dark appearance toggle under Tools with a persistent preference stored separately from the main config.
+- Dark styling for pad tiles, waveform, diagnostics, inputs, monitor device list and control panel.
+- Dark native title bar on Windows versions that support it.
+
+### Fixed / Polished
+- Owner-drawn button text is centered horizontally and vertically; multiline pad labels are centered as a unit.
+- Preserved the v0.8.10 controller layout, VST protocol v3 and audio engine.
+
+## [0.8.10] - Numeric Controls & Focus Styling
+
+### Fixed / Polished
+- Replaced stray horizontal focus lines on custom buttons with full focus outlines.
+- Integrated Auto Sweep controls with the dark pitch panel.
+- Speed and Depth values can be typed as decimals, confirmed with Enter or focus change, and reverted with Escape.
+- Speed rounds to 0.1 Hz in the 0.1–5.0 Hz range; Depth rounds to 0.5 st in the 0.5–12.0 st range.
+
+## [0.8.9] - Interface & Playback State Fixes
+
+### Fixed / Polished
+- Kept Volume alone on the left of the dark panel; grouped Pitch and Auto Sweep on the right.
+- Reconciled stale pad playing indicators when a VST stream stops requesting audio.
+- Reduced oversized bottom status area and redundant layout hide/show operations.
+- Improved focus/hover feedback on action controls and error messages for unsupported Opus-in-Ogg decoding.
+
+### Known Limitation
+- Native Ogg Vorbis/Opus decoding is not bundled; support still depends on Windows Media Foundation codecs.
+
+## [0.8.8] - Auto Sweep & Interactive Pads
+
+### Added
+- Per-pad Auto Sweep triangle LFO modulating live pitch and sampler playback rate.
+- Adjustable sweep Speed (Hz) and Depth (st), with an animated pitch slider.
+- More distinctive pad hover, selection and playing feedback.
+- Global hotkeys select/highlight their assigned pad without stealing window focus.
+- Red waveform cursor guide separate from the playback marker.
+- Remembered controller window coordinates.
+
+### Stability
+- Updated monitor source ownership to release an idle VST source for later monitored playback.
+- Expanded the bounded WinMM monitor queue capacity.
+- Guarded VST worker initialization when an earlier worker has not yet exited.
+
+## [0.8.7] - Earlier stable release
 
 ### Fixed
 - Diagnostics now fully replaces the Soundboard page instead of leaving stale pad, waveform or slider pixels underneath.

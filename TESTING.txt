@@ -1,0 +1,15 @@
+Windows runtime checklist — v0.9.0
+
+[ ] Light theme: pad hover/selection/playing visibly distinct.
+[ ] Dark theme: background, pads, waveform, buttons, selected text, editable fields and Diagnostics remain readable.
+[ ] Tools > Dark Mode toggles repeatedly without stale/flickering pixels.
+[ ] Dark selection persists after closing/relaunching the controller.
+[ ] Soundboard / Diagnostics page switching in both themes.
+[ ] Three-line pad labels vertically centered, including empty pads.
+[ ] Monitor output combo lists devices and remains readable in both themes.
+[ ] Speed and Depth numeric inputs remain editable and accept decimals.
+[ ] Live pitch, waveform selection, Monitor ON/OFF and global hotkeys work as v0.8.10.
+[ ] Equalizer APO Apply / Apply automatically may reload plugin safely (host controls not intercepted).
+[ ] Minimum and maximum window resizing keeps controls usable.
+
+Unable to complete Windows GUI and hardware validation in this environment.

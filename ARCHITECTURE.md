@@ -34,11 +34,21 @@ The controller supplies generated stereo soundboard audio back to the VST. If th
 - Real-time generation path avoids unnecessary heap allocation.
 - Idle/deep-idle paths reduce work when no pads are playing.
 
+## Auto Sweep and controller UI
+
+The v0.8.8+ controller has a per-pad triangle-wave Auto Sweep (LFO) that modulates the existing live pitch parameter. The playback engine still uses sampler-style resampling: modulating pitch also changes playback rate/duration. **There is no independent time-stretch/speed engine.**
+
+Auto Sweep has a cycle speed in Hz and depth in semitones. The pitch slider reflects its current position. Pad hotkeys also select the triggered pad in the controller without calling foreground activation.
+
+The UI uses Win32/GDI, including owner-drawn buttons and waveform painting; Soundboard and Diagnostics views are responsive to window size.
+
+v0.9.0 adds a Light/Dark palette, with native title-bar tinting where Windows supports it. The theme is persisted independently of the soundboard settings.
+
 ## Local monitoring
 
 Local monitor playback is separate from the microphone/VST mix. Monitor failure must not block or interrupt microphone audio.
 
-v0.8.7 prefers the compatibility-oriented Windows playback path from the v0.8.1/v0.8.2 line, with additional fallback handling retained.
+v0.9.0 preserves the compatibility-oriented Windows playback path from the v0.8.1/v0.8.2 line, with additional fallback handling retained. The controller attempts to avoid retaining an idle monitor source connection.
 
 ## File decoding
 
@@ -62,4 +72,6 @@ The compatibility filename remains:
 
 `%LOCALAPPDATA%\APOSoundboard\config_v05.bin`
 
-The internal format is versioned separately. Current builds use atomic replacement, CRC validation and `.bak` recovery so interrupted/corrupt writes can fall back to the previous known-good configuration.
+The internal format is versioned separately (v11 in v0.9.0). Current builds use atomic replacement, CRC validation and `.bak` recovery so interrupted/corrupt writes can fall back to the previous known-good configuration.
+
+The Light/Dark preference is stored separately as `%LOCALAPPDATA%\APOSoundboard\config_v05.bin.theme` for compatibility with older configs.

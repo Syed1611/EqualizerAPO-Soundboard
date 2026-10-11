@@ -2,9 +2,9 @@
 
 A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered audio directly into the processed microphone stream. It is designed to work without VB-Cable, Voicemeeter, or another virtual audio device for microphone routing.
 
-> Current recommended build: **v0.8.7**
+> Current recommended build: **v0.9.0**
 >
-> v0.3/v0.4 were experimental architecture branches. v0.8.3-v0.8.6 are preserved as part of the public development history but are superseded by v0.8.7.
+> v0.3/v0.4 were experimental architecture branches. v0.8.3-v0.8.6 are preserved as superseded development releases. v0.9.0 is the recommended current build.
 
 ## Features
 
@@ -12,7 +12,7 @@ A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered 
 - Single-click to select a pad
 - Double-click to play a pad
 - Right-click pad menu for pad-specific management
-- Selectable waveform region with a live playback playhead
+- Selectable waveform region with live playback playhead and mouse cursor guide
 - Live per-pad volume while audio is already playing
 - Live per-pad pitch from **-12 to +12 semitones**
 - 0.5-unit fine steps with magnetic major snap points
@@ -23,7 +23,11 @@ A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered 
 - Background audio loading and bounded decoded-sample memory
 - Missing-file relocation
 - Local soundboard monitoring to a Windows playback device
-- Responsive Soundboard / Diagnostics views
+- Responsive Soundboard / Diagnostics views with interactive pad/button states
+- Per-pad Auto Sweep (triangle-wave LFO), with Speed (0.1–5.0 Hz) and Depth (0.5–12.0 st)
+- Light/Dark themes with a persistent user preference
+- Pad hotkeys also select/highlight their pad without stealing application focus
+- Restores previous controller window size and position
 - Config backup, CRC validation and recovery
 - Audio engine self-test and detailed runtime diagnostics
 - No installer in current releases
@@ -82,13 +86,19 @@ Pitch is sampler-style resampling, so changing pitch also changes playback speed
 
 Duplicate Pad copies the pad's audio/settings but deliberately does **not** duplicate its hotkey.
 
+## Appearance and Auto Sweep
+
+Switch **Tools → Dark Mode** to toggle the controller theme. The choice is remembered in `%LOCALAPPDATA%\APOSoundboard\config_v05.bin.theme`, separately from the main pad configuration. Some Windows-native dialogs and menu surfaces retain their operating-system appearance.
+
+**Auto Sweep** is an optional per-pad triangle-wave oscillator. It moves the live pitch slider automatically; because this sampler changes speed with pitch, the playback rate changes too. **Speed (Hz)** controls how quickly the sweep cycles, not an independent playback-speed function. **Depth (st)** sets its pitch range. Both fields accept numeric decimal input.
+
 ## Audio formats
 
 - **WAV:** built-in decoder for common PCM and float WAV formats
 - **MP3, AAC/M4A, WMA, FLAC:** Windows Media Foundation
 - **OGG / OGA / Opus:** accepted through Windows Media Foundation when Windows exposes a compatible Vorbis/Opus decoder
 
-v0.8.7 does not bundle a native Vorbis/Opus decoder, so unusual OGG/Opus streams can still fail on some Windows installations.
+v0.9.0 does not bundle a native Vorbis/Opus decoder, so unusual OGG/Opus streams can still fail on some Windows installations.
 
 ## Local monitoring
 
@@ -117,7 +127,7 @@ Settings remain under:
 
 `%LOCALAPPDATA%\APOSoundboard\config_v05.bin`
 
-The filename is retained for compatibility even though the internal config format has evolved. Current builds keep atomic saving, CRC validation and `.bak` recovery.
+The filename is retained for compatibility even though the internal config format has evolved. Current v0.9.0 uses the v11 soundboard config format, with theme preference saved separately. Current builds keep atomic saving, CRC validation and `.bak` recovery.
 
 ## Compatibility notes
 
@@ -143,7 +153,7 @@ See [AUDIT.txt](AUDIT.txt) for current build checks.
 
 ## Version history
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md) and the individual notes under [release-notes/](release-notes/).
 
 ## License
 
