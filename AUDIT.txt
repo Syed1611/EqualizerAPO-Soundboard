@@ -1,10 +1,10 @@
-APO Soundboard v0.8.10 — static build verification
-
-- Controller: PE32+ x86-64 Windows GUI executable.
-- VST: PE32+ x86-64 Windows DLL exporting VSTPluginMain.
-- Controller: zero compiler warnings with -Wall -Wextra -Wpedantic -Wshadow -Wconversion.
-- Plugin: two pre-existing unused helper warnings from winlite.h.
-- Both Clang static analyzer runs completed with zero diagnostics.
-- User interaction and audio behavior have NOT been executed on Windows in
-  this build environment. Real Equalizer APO tests are needed.
-- No external native Ogg Vorbis or Opus decoder has been added.
+v0.9.0 static build verification
+- LLVM x86_64-pc-windows-msvc compilation, with freestanding/no CRT build.
+- Controller: no warnings under -Wall -Wextra -Wpedantic -Wshadow -Wconversion.
+- Plugin: two existing unused static helper warnings in shared winlite.h.
+- Both artifacts: PE32+ x86-64, GUI EXE and DLL respectively.
+- DLL VSTPluginMain export verified with llvm-objdump.
+- Not a full Windows runtime QA or virus scan.
+- No real-device playback/Equalizer APO test performed on this build machine.
+- Dark mode uses dynamically-resolved DWM/uxtheme APIs only when available.
+- Controller music decode path and VST audio processing are otherwise unchanged.
