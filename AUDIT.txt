@@ -1,21 +1,12 @@
-APO Soundboard v0.8.7 audit
-============================
-
-Focused diagnostics-page rendering fix based on v0.8.6.
-
-Checks performed:
-- clang --analyze: controller.c: no diagnostics
-- clang --analyze: plugin.c: no diagnostics
-- controller strong warning build: no warnings
-- plugin strong warning build: only two benign unused helper warnings in winlite.h
-- x64 PE output verified
-- VSTPluginMain export verified
-
-UI fix notes:
-- page-specific controls are always hidden/shown explicitly on layout
-- inactive-page pixels are cleared while both page control sets are hidden
-- parent and active child windows are synchronously repainted after a page switch
-- diagnostics uses 3 columns at normal desktop widths, 2 at narrower widths
-- diagnostic cards are clamped to the visible client area
-
-The v0.8.6 WinMM-compatible monitor backend is unchanged.
+APO Soundboard v0.8.8 build audit
+- Controller and VST: PE32+ x86-64 Windows binaries.
+- VST exports VSTPluginMain.
+- Controller -O3 strong-warning build: no warnings.
+- VST -O3 strong-warning build: two unused helper warnings in winlite.h.
+- Controller and plugin static analyzer: no diagnostics.
+- Source still uses no sockets, downloader, autorun/persistence, credentials,
+  process injection or GPU graphics API.
+- Uses dynamic Win32 import resolution, which is unusual and may trigger some
+  antivirus heuristics; this is not an AV certification.
+- No Windows GUI/Equalizer APO/WASAPI hardware runtime was available here.
+- Review/restore from config_v05.bin.bak if a future migration causes issues.
