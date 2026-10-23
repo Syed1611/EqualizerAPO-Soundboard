@@ -201,7 +201,7 @@
 #define MONVOL_W g_monVolW
 #define MONVOL_H g_monVolH
 #define PROTOCOL_VERSION 3u
-#define BUILD_VERSION 90101u
+#define BUILD_VERSION 90201u
 #define MAX_DECODE_WORKERS 2
 #define PIPE_AUDIO_IDLE 0x00000001u
 #define PAD_EMPTY 0
@@ -246,7 +246,7 @@ typedef struct { WL_U32 magic,frames,channels,flags; } PipeAudio;
 #define M_REQ   0x51525341u
 #define M_AUDIO 0x44525341u
 #define M_ACK   0x4b435341u
-static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','1',0 };
+static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','2',0 };
 
 static WL_API g_api;
 static WL_HWND g_main=0,g_tabSoundButton=0,g_tabDiagButton=0,g_padButtons[PAD_COUNT],g_selectedText=0,g_statusText=0,g_nameEdit=0,g_applyNameButton=0,g_monitorButton=0,g_fileInfoText=0,g_monitorDeviceCombo=0,g_monitorVolumeText=0;
@@ -375,7 +375,7 @@ static WL_HGDIOBJ g_backBitmap=0,g_backOldBitmap=0;
 static int g_backW=0,g_backH=0;
 
 static const WL_WCHAR CLASS_NAME[]={'A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','C','t','r','l',0};
-static const WL_WCHAR WINDOW_TITLE[]={'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','S','c','r','a','t','c','h',' ','E','d','i','t','i','o','n',' ','v','0','.','9','.','1',' ','E','X','P','E','R','I','M','E','N','T','A','L',0};
+static const WL_WCHAR WINDOW_TITLE[]={'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','S','c','r','a','t','c','h',' ','E','d','i','t','i','o','n',' ','v','0','.','9','.','2',' ','E','X','P','E','R','I','M','E','N','T','A','L',0};
 static const WL_WCHAR BTN_CLASS[]={'B','U','T','T','O','N',0};
 static const WL_WCHAR STATIC_CLASS[]={'S','T','A','T','I','C',0};
 static const WL_WCHAR EDIT_CLASS[]={'E','D','I','T',0};
@@ -1161,7 +1161,8 @@ static void monitor_process(void*owner,const float*audio,WL_U32 frames,WL_U32 sa
 static void monitor_owner_disconnect(void*owner){WL_UPTR me=(WL_UPTR)owner;if(__atomic_load_n(&g_monitorOwner,__ATOMIC_ACQUIRE)==me){monitor_wave_close_device();__atomic_store_n(&g_monitorOwner,0,__ATOMIC_RELEASE);__atomic_store_n(&g_monitorSourceActive,0,__ATOMIC_RELEASE);monitor_ring_reset(__atomic_load_n(&g_monitorSourceRate,__ATOMIC_RELAXED));}}
 static void monitor_shutdown(void){__atomic_store_n(&g_monitorEnabled,0,__ATOMIC_RELEASE);monitor_wave_close_device();WL_HANDLE e=(WL_HANDLE)(WL_UPTR)__atomic_load_n((volatile WL_UPTR*)&g_monitorEventHandle,__ATOMIC_ACQUIRE);if(e&&pSetEvent)pSetEvent(e);if(g_monitorThread){g_api.WaitForSingleObject(g_monitorThread,2000);g_api.CloseHandle(g_monitorThread);g_monitorThread=0;}if(g_winmm&&g_api.FreeLibrary)g_api.FreeLibrary((WL_HMODULE)g_winmm);g_winmm=0;pWaveOutOpen=0;pWaveOutPrepareHeader=0;pWaveOutUnprepareHeader=0;pWaveOutWrite=0;pWaveOutReset=0;pWaveOutClose=0;pWaveOutGetNumDevs=0;pWaveOutGetDevCapsW=0;if(g_avrt&&g_api.FreeLibrary)g_api.FreeLibrary((WL_HMODULE)g_avrt);if(g_monitorOle32&&g_api.FreeLibrary)g_api.FreeLibrary((WL_HMODULE)g_monitorOle32);g_avrt=g_monitorOle32=0;pMonCoInitializeEx=0;pMonCoUninitialize=0;pMonCoCreateInstance=0;pMonCoTaskMemFree=0;pMonPropVariantClear=0;pAvSetMmThreadCharacteristicsW=0;pAvSetMmThreadPriority=0;pAvRevertMmThreadCharacteristics=0;}
 
-typedef struct { WL_I32 active,pad; Sample* sample; double start,pos,end,step,targetStep; float volume,targetVolume; WL_U64 age; WL_I32 scratch; double grainA,grainB,anchorA,anchorB,scratchRatio,scratchLastOut; WL_I32 scratchRelease; } Voice;
+#include "scratch_dsp.h"
+typedef struct { WL_I32 active,pad; Sample* sample; double start,pos,end,step,targetStep; float volume,targetVolume; WL_U64 age; WL_I32 scratch; ApoScratchStretch scrub; double scratchDryPos; WL_I32 scratchRelease,scratchAttack; } Voice;
 typedef struct { WL_HANDLE pipe; WL_U32 sampleRate,lastUnderruns,lastClips; WL_I32 haveCounters; WL_I64 seen[PAD_COUNT]; WL_I64 seenPadStop[PAD_COUNT]; WL_I64 seenStop; WL_U64 nextAge; Voice voices[MAX_VOICES]; float audio[2048*2]; } Client;
 static int pipe_read_exact(WL_HANDLE h,void*buf,WL_U32 bytes){WL_U8*d=(WL_U8*)buf;WL_U32 done=0;while(done<bytes&&g_running){WL_DWORD n=0;if(!g_api.ReadFile(h,d+done,bytes-done,&n,0)||!n)return 0;done+=n;}return done==bytes;}
 static int pipe_write_exact(WL_HANDLE h,const void*buf,WL_U32 bytes){const WL_U8*s=(const WL_U8*)buf;WL_U32 done=0;while(done<bytes&&g_running){WL_DWORD n=0;if(!g_api.WriteFile(h,s+done,bytes-done,&n,0)||!n)return 0;done+=n;}return done==bytes;}
@@ -1171,39 +1172,29 @@ static void playing_dec(int pad){WL_I32 n=__atomic_sub_fetch(&g_activeVoices[pad
 static void deactivate_voice(Client*c,int v){Voice*vv=&c->voices[v];if(!vv->active)return;int pad=vv->pad;Sample*s=vv->sample;vv->active=0;vv->sample=0;if(pad>=0&&pad<PAD_COUNT)playing_dec(pad);sample_release(s);}
 static int add_voice(Client*c,int pad){Sample*s=0;float a=0,b=1;spin_lock();s=g_pads[pad].sample;if(s)sample_retain(s);a=fclamp(g_pads[pad].selStart,0,1);b=fclamp(g_pads[pad].selEnd,0,1);spin_unlock();if(!s){__atomic_add_fetch(&g_droppedTriggers,1,__ATOMIC_RELAXED);return 0;}if(b<=a){a=0;b=1;}double start=(double)a*(double)s->frames,end=(double)b*(double)s->frames;if(end>(double)s->frames)end=(double)s->frames;if(end<=start+0.5){sample_release(s);__atomic_add_fetch(&g_droppedTriggers,1,__ATOMIC_RELAXED);return 0;}int slot=-1;WL_U64 oldest=(WL_U64)-1;int oldestSlot=0;for(int v=0;v<MAX_VOICES;v++){if(!c->voices[v].active){slot=v;break;}if(c->voices[v].age<oldest){oldest=c->voices[v].age;oldestSlot=v;}}if(slot<0){slot=oldestSlot;deactivate_voice(c,slot);__atomic_add_fetch(&g_voiceSteals,1,__ATOMIC_RELAXED);}WL_I32 ph=__atomic_load_n(&g_pads[pad].pitchHalf,__ATOMIC_ACQUIRE),vh=__atomic_load_n(&g_pads[pad].volumeHalfPct,__ATOMIC_ACQUIRE);double step=((double)s->sampleRate/(double)(c->sampleRate?c->sampleRate:48000))*pitch_ratio_half(ph);float vol=(float)vh/200.0f;Voice*vv=&c->voices[slot];vv->active=1;vv->pad=pad;vv->sample=s;vv->start=start;vv->pos=start;vv->end=end;vv->step=vv->targetStep=step;vv->volume=vv->targetVolume=vol;vv->age=++c->nextAge;
  vv->scratch=(__atomic_load_n(&g_scratchHold,__ATOMIC_ACQUIRE)&&__atomic_load_n(&g_scratchPad,__ATOMIC_ACQUIRE)==pad)?1:0;
- vv->scratchRatio=0.65;vv->grainA=0;vv->grainB=0.5;vv->scratchLastOut=0;vv->scratchRelease=0;
+ vv->scratchRelease=0;vv->scratchAttack=0;vv->scratchDryPos=vv->pos;vv->scrub.initialized=0;
  if(vv->scratch){double pos=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)s->frames;
-   vv->pos=vv->anchorA=vv->anchorB=pos;vv->start=0;vv->end=(double)s->frames;
+   vv->pos=pos;vv->start=0;vv->end=(double)s->frames;
+   scratch_stretch_init(&vv->scrub,pos,s->sampleRate,c->sampleRate);
+   vv->scratchAttack=(WL_I32)((c->sampleRate?c->sampleRate:48000)/100);
  }
  playing_inc(pad);return 1;}
 static void sync_triggers(Client*c){WL_I64 stop=__atomic_load_n(&g_stopSerial,__ATOMIC_ACQUIRE);if(stop!=c->seenStop){for(int v=0;v<MAX_VOICES;v++)deactivate_voice(c,v);c->seenStop=stop;}for(int i=0;i<PAD_COUNT;i++){WL_I64 pst=__atomic_load_n(&g_padStopSerial[i],__ATOMIC_ACQUIRE);if(pst!=c->seenPadStop[i]){for(int v=0;v<MAX_VOICES;v++)if(c->voices[v].active&&c->voices[v].pad==i)deactivate_voice(c,v);c->seenPadStop[i]=pst;}WL_I64 now=__atomic_load_n(&g_triggerSerial[i],__ATOMIC_ACQUIRE),delta=now-c->seen[i];if(delta>8){__atomic_add_fetch(&g_droppedTriggers,(WL_U32)(delta-8),__ATOMIC_RELAXED);delta=8;}while(delta-->0)add_voice(c,i);c->seen[i]=now;}}
 static float cubic_sample(const float*s,WL_U64 frames,double start,double end,double pos){if(!s||!frames)return 0;WL_U64 lo=(WL_U64)start,hi=end>=1.0?(WL_U64)(end-1.0):0;if(hi>=frames)hi=frames-1;if(lo>hi)lo=hi;WL_U64 i1=(WL_U64)pos;if(i1<lo)i1=lo;if(i1>hi)i1=hi;WL_U64 i0=i1>lo?i1-1:i1,i2=i1<hi?i1+1:i1,i3=i2<hi?i2+1:i2;float t=(float)(pos-(double)((WL_U64)pos)),t2=t*t,t3=t2*t;float p0=s[i0],p1=s[i1],p2=s[i2],p3=s[i3];return 0.5f*((2.0f*p1)+(-p0+p2)*t+(2.0f*p0-5.0f*p1+4.0f*p2-p3)*t2+(-p0+3.0f*p1-3.0f*p2+p3)*t3);}
 static void publish_playheads(Client*c){WL_U64 bestAge[PAD_COUNT];WL_I32 bestPos[PAD_COUNT];for(int i=0;i<PAD_COUNT;i++){bestAge[i]=0;bestPos[i]=-1;}for(int v=0;v<MAX_VOICES;v++){Voice*vv=&c->voices[v];if(!vv->active||!vv->sample)continue;int p=vv->pad;__atomic_store_n(&g_padLastRenderMs[p],sweep_clock(),__ATOMIC_RELEASE);if(vv->age>=bestAge[p]){bestAge[p]=vv->age;double f=vv->sample->frames?vv->pos/(double)vv->sample->frames:0;if(f<0)f=0;if(f>1)f=1;bestPos[p]=(WL_I32)(f*1000000.0+0.5);}}for(int i=0;i<PAD_COUNT;i++)if(bestPos[i]>=0)__atomic_store_n(&g_playPosPpm[i],bestPos[i],__ATOMIC_RELEASE);}
-/* Two overlapping windowed grains. At standstill they repeatedly sweep a short
-   region around the held waveform position; moving the playhead changes each
-   grain's anchor and signed playback rate (including reverse). */
-static double grain_tri(double x){return x<0.5?2.0*x:2.0*(1.0-x);}
-static float scratch_granular(Voice*v,WL_U32 hostRate,WL_U64 tick){
- Sample*s=v->sample;if(!s||!s->frames)return 0;
+/* Pitch-preserving cursor scrub. The cursor velocity only determines which
+   source frames are selected at the next grain boundary. Every grain is read
+   at exactly the original sample rate, including during reverse/freeze.
+   WSOLA-style phase similarity avoids the watery/chorused former effect. */
+static float scratch_granular(Voice*v,WL_U32 hostRate,WL_U64 tick,int releasing){
+ Sample*s=v->sample;if(!s||!s->frames)return 0.0f;
  WL_U64 moved=__atomic_load_n(&g_scratchMoveMs,__ATOMIC_ACQUIRE);
- WL_I32 speedMilli=__atomic_load_n(&g_scratchRateMilli,__ATOMIC_ACQUIRE);
- double speed=tick>=moved&&tick-moved<90ull&&(speedMilli>20||speedMilli< -20)?(double)speedMilli*0.001:0.65;
- v->scratchRatio+=(speed-v->scratchRatio)*0.0025;
- double anchor=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)s->frames;
- WL_U32 sr=hostRate?hostRate:48000;
- double grainFrames=(double)sr*0.058; if(grainFrames<64)grainFrames=64;
- double delta=(double)s->sampleRate/(double)sr;
- double pA=v->anchorA+(v->grainA-0.5)*grainFrames*v->scratchRatio*delta;
- double pB=v->anchorB+(v->grainB-0.5)*grainFrames*v->scratchRatio*delta;
- float a=cubic_array_sample(s->mono,s->frames,pA),b=cubic_array_sample(s->mono,s->frames,pB);
- double wa=grain_tri(v->grainA),wb=grain_tri(v->grainB);
- float output=(float)((a*wa+b*wb)/(wa+wb+0.000001));
- double incr=1.0/grainFrames;
- v->grainA+=incr;v->grainB+=incr;
- if(v->grainA>=1){v->grainA-=1;v->anchorA=anchor;}
- if(v->grainB>=1){v->grainB-=1;v->anchorB=anchor;}
- v->pos=anchor;v->scratchLastOut=output;
- return output;
+ WL_I32 rateMilli=__atomic_load_n(&g_scratchRateMilli,__ATOMIC_ACQUIRE);
+ double speed=(!releasing&&tick>=moved&&tick-moved<90ull&&(rateMilli>35||rateMilli< -35))?(double)rateMilli*0.001:0.0;
+ double pointer=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)s->frames;
+ /* Do not invent any playback velocity after the hand stops. */
+ float out=scratch_stretch_render(&v->scrub,s->mono,s->frames,s->sampleRate,hostRate,pointer,speed);
+ v->pos=pointer;return out;
 }
 static int generate_audio(Client*c,float*out,WL_U32 frames){
  sync_triggers(c);
@@ -1222,9 +1213,9 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
    Voice*v=&c->voices[chosen];
    if(!v->scratch&&v->sample){
     double anchor=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)v->sample->frames;
-    v->scratch=1;v->grainA=0;v->grainB=0.5;
-    v->anchorA=v->anchorB=anchor;v->scratchRatio=0.65;
-    v->pos=anchor;v->start=0;v->end=(double)v->sample->frames;v->scratchLastOut=0;
+    v->scratchDryPos=v->pos;v->scratch=1;v->pos=anchor;v->start=0;v->end=(double)v->sample->frames;
+    scratch_stretch_init(&v->scrub,anchor,v->sample->sampleRate,c->sampleRate);
+    v->scratchAttack=(WL_I32)((c->sampleRate?c->sampleRate:48000)/100);v->scratchRelease=0;
    }
   }
  }
@@ -1245,12 +1236,22 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
    float q=0;
    int holding=vv->scratch&&__atomic_load_n(&g_scratchHold,__ATOMIC_ACQUIRE)&&__atomic_load_n(&g_scratchPad,__ATOMIC_ACQUIRE)==vv->pad;
    if(holding){
-    q=scratch_granular(vv,c->sampleRate,blockTick);
+    q=scratch_granular(vv,c->sampleRate,blockTick,0);
+    if(vv->scratchAttack>0){
+     /* Short entry crossfade prevents an instantaneous seek click. */
+     int total=(int)((c->sampleRate?c->sampleRate:48000)/100);if(total<1)total=1;
+     double mix=1.0-(double)vv->scratchAttack/(double)total;
+     float dry=cubic_array_sample(vv->sample->mono,vv->sample->frames,vv->scratchDryPos);
+     vv->scratchDryPos+=(double)vv->sample->sampleRate/(double)(c->sampleRate?c->sampleRate:48000);
+     q=(float)((double)dry*(1.0-mix)+(double)q*mix);
+     vv->scratchAttack--;
+    }
    }else{
     if(vv->scratch){
-     /* Leaving the scratch surface: the granular sound fades into normal
-        playback from the released cursor rather than a sudden hard jump. */
-     vv->scratch=0;vv->scratchRelease=(WL_I32)((c->sampleRate?c->sampleRate:48000)/85);
+     /* Release preserves the old grain engine for a short CROSSFADE into
+        normal playback; a constant sample held for 12ms caused clicks. */
+     vv->scratch=0;vv->scratchAttack=0;
+     vv->scratchRelease=(WL_I32)((c->sampleRate?c->sampleRate:48000)/70);
      if(vv->scratchRelease<1)vv->scratchRelease=1;
      vv->pos=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)vv->sample->frames;
      vv->start=0;vv->end=(double)vv->sample->frames;
@@ -1261,11 +1262,15 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
     vv->step+=(vv->targetStep-vv->step)*smooth;
     q=cubic_sample(vv->sample->mono,vv->sample->frames,vv->start,vv->end,pos);
     if(vv->scratchRelease>0){
-     double blend=1.0-(double)vv->scratchRelease/(double)((c->sampleRate?c->sampleRate:48000)/85);
-     if(blend<0)blend=0;if(blend>1)blend=1;
-     q=(float)(vv->scratchLastOut*(1.0-blend)+q*blend);
+     int total=(int)((c->sampleRate?c->sampleRate:48000)/70);if(total<1)total=1;
+     double mix=1.0-(double)vv->scratchRelease/(double)total;
+     if(mix<0)mix=0;if(mix>1)mix=1;
+     float previous=scratch_granular(vv,c->sampleRate,blockTick,1);
+     q=(float)((double)previous*(1.0-mix)+(double)q*mix);
      vv->scratchRelease--;
     }
+    /* scratch_granular writes the held cursor into vv->pos. Advance using
+       the NORMAL engine's pos, never the frozen cursor after release. */
     vv->pos=pos+vv->step;
     if(vv->pos>=vv->end)deactivate_voice(c,v);
    }
@@ -1703,7 +1708,7 @@ static void scratch_update_position(int x,int began){
     Sample*s=0;spin_lock();s=g_pads[g_scratchPad].sample;if(s)sample_retain(s);spin_unlock();
     if(s){double seconds=(double)s->frames/(double)(s->sampleRate?s->sampleRate:48000);
       double v=((double)(x-g_scratchLastX)/(double)(WAVE_W-1))*seconds*1000.0/(double)dt;
-      if(v>8.0)v=8.0;if(v< -8.0)v=-8.0;
+      if(v>6.0)v=6.0;if(v< -6.0)v=-6.0;
       rate=(WL_I32)(v*1000.0);sample_release(s);
     }
   }
@@ -1782,7 +1787,7 @@ static WL_LRESULT WL_CALLBACK wndproc(WL_HWND hwnd,WL_UINT msg,WL_WPARAM wp,WL_L
    g_waveDragging=2;g_scratchLastMs=0;__atomic_store_n(&g_scratchPad,g_selected,__ATOMIC_RELEASE);
    scratch_update_position(x,1);__atomic_store_n(&g_scratchHold,1,__ATOMIC_RELEASE);
    g_api.SetCapture(hwnd);if(!pad_visible_playing(g_selected))trigger_pad(g_selected);
-   set_status_ascii("SCRATCH ACTIVE: drag left/right, hold still to sustain; release resumes playback.");return 0;
+   set_status_ascii("SCRATCH ACTIVE: move for speed and direction, hold to freeze at original pitch.");return 0;
   }if(in_wave(x,y)&&sp){g_waveDragging=1;g_waveAnchor=wave_frac(x);g_api.SetCapture(hwnd);apply_wave_drag(g_waveAnchor,0);return 0;}if(in_volume_control(x,y)){g_controlDragging=1;g_api.SetCapture(hwnd);set_volume_from_x(x,0);return 0;}if(in_pitch_control(x,y)){g_controlDragging=2;g_api.SetCapture(hwnd);set_pitch_from_x(x,0);return 0;}if(in_monitor_control(x,y)){g_controlDragging=3;g_api.SetCapture(hwnd);set_monitor_volume_from_x(x,0);return 0;}}
  if(g_activeTab==0&&msg==WM_MOUSEMOVE){int mx=(WL_I16)LOWORD_(lp),my=(WL_I16)HIWORD_(lp);int hovered=in_volume_control(mx,my)?1:(in_pitch_control(mx,my)?2:(in_monitor_control(mx,my)?3:0));if(hovered!=g_sliderHovered){g_sliderHovered=hovered;invalidate_controls();}int old=g_waveHoverX;g_waveHoverX=in_wave(mx,my)?mx:-1;if(g_waveHoverX!=old){WL_RECT rr={WAVE_X,WAVE_Y,WAVE_X+WAVE_W,WAVE_Y+WAVE_H};g_api.InvalidateRect(g_main,&rr,WL_FALSE);}}
  if(g_activeTab==0&&msg==WM_MOUSEMOVE&&(wp&MK_LBUTTON)){int x=(WL_I16)LOWORD_(lp);if(g_waveDragging==2){scratch_update_position(x,0);return 0;}if(g_waveDragging==1){apply_wave_drag(wave_frac(x),0);return 0;}if(g_controlDragging==1){set_volume_from_x(x,0);return 0;}if(g_controlDragging==2){set_pitch_from_x(x,0);return 0;}if(g_controlDragging==3){set_monitor_volume_from_x(x,0);return 0;}}
@@ -1792,7 +1797,7 @@ static WL_LRESULT WL_CALLBACK wndproc(WL_HWND hwnd,WL_UINT msg,WL_WPARAM wp,WL_L
  if(g_activeTab==0&&msg==WM_LBUTTONDBLCLK){int x=(WL_I16)LOWORD_(lp),y=(WL_I16)HIWORD_(lp);if(in_wave(x,y)){if(!g_waveMode)reset_wave_range();return 0;}if(in_volume_control(x,y)){reset_volume();return 0;}if(in_pitch_control(x,y)){reset_pitch();return 0;}if(in_monitor_control(x,y)){reset_monitor_volume();return 0;}}
  if(msg==WM_COMMAND){int code=HIWORD_(wp),id=LOWORD_(wp);if((id==ID_MODE_SELECT||id==ID_MODE_SCRATCH)&&code==BN_CLICKED){
    end_scratch();g_waveMode=(id==ID_MODE_SCRATCH)?1:0;update_wave_mode_controls();invalidate_wave();
-   set_status_ascii(g_waveMode?"Scratch & Freeze enabled: drag for variable-speed audio; hold to sustain it.":"Select Range restored.");return 0;
+   set_status_ascii(g_waveMode?"Scratch & Freeze: pitch stays original while speed changes; hold for clear audio freeze.":"Select Range restored.");return 0;
  }if((id==ID_TAB_SOUND||id==ID_TAB_DIAG)&&code==BN_CLICKED){int newTab=(id==ID_TAB_DIAG)?1:0;if(newTab!=g_activeTab){end_scratch();hide_all_page_controls();g_pageVisibilityTab=-1;g_activeTab=newTab;g_savedTab=g_activeTab;update_tab_buttons();/* Clear the previous page while all page children are hidden. This is required because themed group boxes/statics can be transparent. */WL_RECT clr={0,0,g_clientW,g_clientH};g_api.InvalidateRect(g_main,&clr,WL_TRUE);g_api.UpdateWindow(g_main);layout_ui();force_full_page_repaint();}if(g_activeTab)update_diagnostics();else{update_selected_text();update_file_info();invalidate_wave();invalidate_controls();}return 0;}if(id>=ID_PAD_BASE&&id<ID_PAD_BASE+PAD_COUNT){int i=id-ID_PAD_BASE;if(code==BN_CLICKED||code==BN_DOUBLECLICKED){select_pad(i);Sample*sp=0;WL_I32 st;spin_lock();sp=g_pads[i].sample;st=g_pads[i].loadState;spin_unlock();if(code==BN_DOUBLECLICKED&&sp){trigger_pad(i);set_status_ascii(__atomic_load_n(&g_boardMuted,__ATOMIC_RELAXED)?"Board is muted; trigger ignored.":"Playing selected waveform range.");}else if(st==PAD_LOADING)set_status_ascii("This pad is still loading in the background.");else if(st==PAD_MISSING)set_status_ascii("This pad's file is missing. Use Tools > Relocate Missing Sounds.");else if(!sp)set_status_ascii("Empty pad selected. Right-click it to load audio.");else set_status_ascii("Pad selected. Right-click it for hotkey/audio/reset actions.");return 0;}return 0;}if(id==ID_MONITOR_DEVICE&&code==CBN_SELCHANGE){monitor_device_changed();update_diagnostics();return 0;}
  if(id==ID_LFO_RATE_EDIT&&code==EN_KILLFOCUS){sweep_update(1,0,1);return 0;}
  if(id==ID_LFO_DEPTH_EDIT&&code==EN_KILLFOCUS){sweep_update(2,0,1);return 0;}

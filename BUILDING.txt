@@ -1,10 +1,12 @@
-Build Scratch Edition (requires Clang and lld-link; Windows x64 target)
-
-From src/:
+Build Scratch Edition v0.9.2 (Windows x64)
+Requires LLVM clang and lld-link. Commands from src/:
 
 clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
 lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardScratchController.exe controller.obj
 clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.1.dll plugin.obj
+lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.2.dll plugin.obj
 
-The source includes a small freestanding Win32/VST2 ABI layer in winlite.h.
+Pitch-preserving Scratch DSP lives in src/scratch_dsp.h. It is header-only,
+freestanding, and requires no extra audio runtime libraries or FFT packages.
+An optional synthetic pitch-test harness is in tests/pitch_preservation.c.
+Compile this test on Linux/macOS with clang -O3 -lm and run e.g. ./test 0.5.
