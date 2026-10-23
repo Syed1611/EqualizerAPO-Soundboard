@@ -201,7 +201,7 @@
 #define MONVOL_W g_monVolW
 #define MONVOL_H g_monVolH
 #define PROTOCOL_VERSION 3u
-#define BUILD_VERSION 90401u
+#define BUILD_VERSION 90501u
 #define MAX_DECODE_WORKERS 2
 #define PIPE_AUDIO_IDLE 0x00000001u
 #define PAD_EMPTY 0
@@ -375,7 +375,7 @@ static WL_HGDIOBJ g_backBitmap=0,g_backOldBitmap=0;
 static int g_backW=0,g_backH=0;
 
 static const WL_WCHAR CLASS_NAME[]={'A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','C','t','r','l',0};
-static const WL_WCHAR WINDOW_TITLE[]={'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','S','c','r','a','t','c','h',' ','E','d','i','t','i','o','n',' ','v','0','.','9','.','4',' ','E','X','P','E','R','I','M','E','N','T','A','L',0};
+static const WL_WCHAR WINDOW_TITLE[]={'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','S','c','r','a','t','c','h',' ','E','d','i','t','i','o','n',' ','v','0','.','9','.','5',' ','E','X','P','E','R','I','M','E','N','T','A','L',0};
 static const WL_WCHAR BTN_CLASS[]={'B','U','T','T','O','N',0};
 static const WL_WCHAR STATIC_CLASS[]={'S','T','A','T','I','C',0};
 static const WL_WCHAR EDIT_CLASS[]={'E','D','I','T',0};
@@ -1194,7 +1194,9 @@ static float scratch_granular(Voice*v,WL_U32 hostRate,WL_U64 tick,int releasing)
  double base=(double)s->sampleRate/(double)(hostRate?hostRate:48000);
  double pitch=(base>0.0)?v->targetStep/base:1.0;
  float out=scratch_stretch_render(&v->scrub,s->mono,s->frames,s->sampleRate,hostRate,pointer,speed,pitch);
- v->pos=pointer;return out;
+ /* Experimental DSP reserve: leave room for live microphone audio and
+    overlapping pads before the VST output limiter. */
+ v->pos=pointer;return out*0.76f;
 }
 static int generate_audio(Client*c,float*out,WL_U32 frames){
  sync_triggers(c);
@@ -1277,7 +1279,11 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
    vv->volume+=(vv->targetVolume-vv->volume)*(float)smooth;
    sum+=q*vv->volume;
   }
-  sum=flush_tiny(fclamp(sum,-4.0f,4.0f));out[f*2]=sum;out[f*2+1]=sum;
+  /* Mix guard before crossing the named pipe. The mic remains untouched.
+     Preserve linear response up to 0.85 with a smooth saturation above it. */
+  float magnitude=sum<0?-sum:sum;
+  if(magnitude>0.85f){float above=magnitude-0.85f;float a=0.85f+0.14f*above/(0.14f+above);sum=sum<0?-a:a;}
+  sum=flush_tiny(sum);out[f*2]=sum;out[f*2+1]=sum;
  }
  publish_playheads(c);return 1;
 }
@@ -1787,7 +1793,7 @@ static WL_LRESULT WL_CALLBACK wndproc(WL_HWND hwnd,WL_UINT msg,WL_WPARAM wp,WL_L
    g_waveDragging=2;g_scratchLastMs=0;__atomic_store_n(&g_scratchPad,g_selected,__ATOMIC_RELEASE);
    scratch_update_position(x,1);__atomic_store_n(&g_scratchHold,1,__ATOMIC_RELEASE);
    g_api.SetCapture(hwnd);if(!pad_visible_playing(g_selected))trigger_pad(g_selected);
-   set_status_ascii("SCRATCH ACTIVE: mouse controls speed/direction; the Pitch slider controls tone (live). Hold to freeze.");return 0;
+   set_status_ascii("SCRATCH ACTIVE: cursor controls speed/direction; Pitch changes tone. Hold for spectral freeze.");return 0;
   }if(in_wave(x,y)&&sp){g_waveDragging=1;g_waveAnchor=wave_frac(x);g_api.SetCapture(hwnd);apply_wave_drag(g_waveAnchor,0);return 0;}if(in_volume_control(x,y)){g_controlDragging=1;g_api.SetCapture(hwnd);set_volume_from_x(x,0);return 0;}if(in_pitch_control(x,y)){g_controlDragging=2;g_api.SetCapture(hwnd);set_pitch_from_x(x,0);return 0;}if(in_monitor_control(x,y)){g_controlDragging=3;g_api.SetCapture(hwnd);set_monitor_volume_from_x(x,0);return 0;}}
  if(g_activeTab==0&&msg==WM_MOUSEMOVE){int mx=(WL_I16)LOWORD_(lp),my=(WL_I16)HIWORD_(lp);int hovered=in_volume_control(mx,my)?1:(in_pitch_control(mx,my)?2:(in_monitor_control(mx,my)?3:0));if(hovered!=g_sliderHovered){g_sliderHovered=hovered;invalidate_controls();}int old=g_waveHoverX;g_waveHoverX=in_wave(mx,my)?mx:-1;if(g_waveHoverX!=old){WL_RECT rr={WAVE_X,WAVE_Y,WAVE_X+WAVE_W,WAVE_Y+WAVE_H};g_api.InvalidateRect(g_main,&rr,WL_FALSE);}}
  if(g_activeTab==0&&msg==WM_MOUSEMOVE&&(wp&MK_LBUTTON)){int x=(WL_I16)LOWORD_(lp);if(g_waveDragging==2){scratch_update_position(x,0);return 0;}if(g_waveDragging==1){apply_wave_drag(wave_frac(x),0);return 0;}if(g_controlDragging==1){set_volume_from_x(x,0);return 0;}if(g_controlDragging==2){set_pitch_from_x(x,0);return 0;}if(g_controlDragging==3){set_monitor_volume_from_x(x,0);return 0;}}

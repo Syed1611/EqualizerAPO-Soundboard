@@ -1,10 +1,23 @@
-LLVM clang + lld-link for Windows x64. In src/:
+LLVM clang + lld-link on a Windows/LLVM-capable host, target x86_64-pc-windows-msvc.
+From src/:
 
 clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.4.dll plugin.obj
+lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.5.dll plugin.obj
+
 clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
 lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardScratchController.exe controller.obj
 
-For offline DSP tests, compile each test file in tests/ with clang -O2 -I.
-and -lm on Linux/macOS (C source uses fixture paths under /mnt/data; edit those
-if running on another computer). All DSP algorithms are in scratch_dsp.h.
+The project implements a freestanding VST2-compatible ABI subset.
+The new spectral DSP is in src/scratch_dsp.h; it does not require CRT/math
+libraries in the shipped Windows build. FFT work buffers live on the heap-
+allocated Client voice state rather than the Windows worker thread stack.
+
+Offline DSP tests on Linux/macOS (clang -O3 -I . -lm):
+clang -O3 -I . tests/test_scratch.c -lm -o test_scratch && ./test_scratch
+clang -O3 -I . tests/test_spectral_freeze.c -lm -o test_spectral_freeze && ./test_spectral_freeze
+clang -O3 -I . tests/test_freeze_regression.c -lm -o test_freeze_regression && ./test_freeze_regression
+clang -O3 -I . tests/test_live_pitch.c -lm -o test_live_pitch && ./test_live_pitch
+
+These tests write raw outputs under /mnt/data/aposb_scratch_v095. Change their
+fixture paths when running outside the original test environment. The tests
+are not a substitute for listening through Equalizer APO on Windows.
