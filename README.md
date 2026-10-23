@@ -2,22 +2,22 @@
 
 A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered audio directly into the processed microphone stream. It is designed to work without VB-Cable, Voicemeeter, or another virtual audio device for microphone routing.
 
-> Current recommended build: **v0.9.0**
+> Current recommended **lightweight** build: **v0.9.0**. The separate **high-fidelity Scratch Edition** is finalized at **v1.0.0**.
 >
-> v0.3/v0.4 were experimental architecture branches. v0.8.3-v0.8.6 are preserved as superseded development releases. v0.9.0 is the recommended current build.
+> v0.3/v0.4 were experimental architecture branches. v0.8.3-v0.8.6 are preserved as superseded development releases. v0.9.0 remains the recommended lightweight build.
 
-**[Download Lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)** · **[Download Scratch Edition v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8)**
+**[Download Lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)** · **[Download Scratch Edition v1.0.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0)**
 
 ## Editions
 
 This repository offers two separate editions:
 
 - **[Lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)** — recommended for lower-end systems; uses the traditional sampler-style audio engine.
-- **[Scratch Edition v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8)** — higher-fidelity experimental alternative with forward/reverse pitch-preserving waveform scratching, continuous spectral hold, separate **Select Range** and **Scratch** modes, and improved Windows-style UI tabs/theme/diagnostics resizing. Uses its own DLL/controller/configuration and may use more CPU/RAM.
+- **[Scratch Edition v1.0.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0)** — final high-fidelity alternative with forward/reverse pitch-preserving waveform scrubbing, continuous spectral hold, separate **Select Range** and **Scrub** modes, selected-pad Play/Pause/Stop and Spacebar controls, official Windows icon, and polished UI/diagnostics. Uses its own DLL/controller/configuration and may require more CPU/RAM. **[v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8)** remains available as a working previous stable release.
 
 Choose the matching release asset and keep its DLL and controller together. Read the [Scratch Edition setup and source notes](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/README.md). The two editions are maintained independently.
 
-The Scratch Edition's [historical releases v0.9.1–v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/SCRATCH_RELEASES.md) have version-specific source tags and matched ZIP assets; the current lightweight source on this branch remains v0.9.0.
+The Scratch Edition's [release history](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/SCRATCH_RELEASES.md) documents the historical v0.9.1–v0.9.8 releases and final v1.0.0, with matching tagged source and ZIP assets. The lightweight source on this branch remains v0.9.0; the final Scratch source stays on `experimental/scratch-freeze`.
 
 ## Features
 
