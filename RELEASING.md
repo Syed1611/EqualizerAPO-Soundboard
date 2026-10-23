@@ -36,3 +36,15 @@ abd4122ac288f632245a8529befdc93709c725dd66eca0e9a873eb2c3d9f28b2  APOSoundboard-
 Close the old controller and applications actively using the microphone. Extract the **entire package folder** under Equalizer APO's VSTPlugins folder, keeping the versioned VST DLL beside `APOSoundboardController.exe`. Change the VST selection in the Equalizer APO Configuration Editor to the new DLL, then choose **Open panel**. Preserve the previous version until the new one is tested.
 
 OGG/Opus support still depends on Windows Media Foundation codecs. Native Ogg Vorbis and Opus decoders have **not** been bundled. The v0.9.0 appearance change does not alter the soundboard processing engine.
+
+## Scratch Edition (separate release channel)
+
+The high-fidelity alternate edition lives on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze); **do not** tag the stable `main` branch as Scratch Edition.
+
+- **Release tag:** `scratch-v0.9.8` (create it at commit `199bc3966deb59324034c8f26a52fc247b276a77`)
+- **Title:** APO Soundboard Scratch Edition v0.9.8 — High-Fidelity Scratch & UI Polish
+- **ZIP to attach:** `APOSoundboard-ScratchEdition-v0.9.8-x64.zip`
+- **ZIP SHA-256:** `eb6c41be50bdd5ba0d895da8172d0de20c4d35de9e1c61996d8099f4fbab86ae`
+- **Release body and notes:** [Scratch release guide](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze/RELEASING.md)
+
+This release is for the Scratch alternate channel; stable v0.9.0 remains available separately. The v0.9.8 ZIP contains the **unchanged tested RC1 DLL and controller**, with updated final-release documentation.

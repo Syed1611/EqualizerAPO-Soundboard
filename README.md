@@ -6,6 +6,15 @@ A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered 
 >
 > v0.3/v0.4 were experimental architecture branches. v0.8.3-v0.8.6 are preserved as superseded development releases. v0.9.0 is the recommended current build.
 
+## Editions
+
+This repository offers two separate editions:
+
+- **[Lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main)** — recommended for lower-end systems; uses the traditional sampler-style audio engine.
+- **[Scratch Edition v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze)** — higher-fidelity experimental alternative with forward/reverse pitch-preserving waveform scratching, continuous spectral hold, separate **Select Range** and **Scratch** modes, and improved Windows-style UI tabs/theme/diagnostics resizing. Uses its own DLL/controller/configuration and may use more CPU/RAM.
+
+Choose the matching release asset and keep its DLL and controller together. Read the [Scratch Edition setup and source notes](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze/README.md). The two editions are maintained independently.
+
 ## Features
 
 - 16 soundboard pads with global hotkeys
