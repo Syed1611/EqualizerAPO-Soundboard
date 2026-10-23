@@ -1,0 +1,44 @@
+name: One-time retire obsolete branches
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/retire-branches-once.yml'
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.repository == 'Syed1611/EqualizerAPO-Soundboard'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify release tags and delete only the two obsolete branches
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          [[ "$repo" == "Syed1611/EqualizerAPO-Soundboard" ]] || exit 1
+          while read -r tag expected; do
+            actual="$(gh api "repos/$repo/git/ref/tags/$tag" --jq .object.sha)"
+            [[ "$actual" == "$expected" ]] || {
+              echo "Refusing cleanup: $tag has unexpected target $actual"
+              exit 1
+            }
+          done <<'TAGS'
+          scratch-v0.9.1 193a7e8c9f6423a2bca6430dcf2a8861c428f434
+          scratch-v0.9.2 9cf9d6de51b450fec359bf212e20f36fd1ce8754
+          scratch-v0.9.3 81a4039da680bb58c74f6a27a80251564f56cf87
+          scratch-v0.9.4 15a186eb850d2e2a00b9e7f2b4a0d9f9d7f448c3
+          scratch-v0.9.5 0c70c7cd7cc13d721b471059e89a24798d8b810d
+          scratch-v0.9.6 400b77e4153cde5e174baa276c26a9ace7588d55
+          scratch-v0.9.7 dcb92136e72868b7f229879e17d2c4459c7bf033
+          scratch-v0.9.8 199bc3966deb59324034c8f26a52fc247b276a77
+          TAGS
+          one="$(gh api "repos/$repo/git/ref/heads/eapo-ui-ab-build" --jq .object.sha)"
+          two="$(gh api "repos/$repo/git/ref/heads/experimental/scratch-release-history" --jq .object.sha)"
+          [[ "$one" == "4cb0f70846f4b39e09886753039609fad678a9ce" ]] || exit 1
+          [[ "$two" == "dcb92136e72868b7f229879e17d2c4459c7bf033" ]] || exit 1
+          gh api -X DELETE "repos/$repo/git/refs/heads/eapo-ui-ab-build"
+          gh api -X DELETE "repos/$repo/git/refs/heads/experimental/scratch-release-history"
+          echo "Retired both obsolete branches; historical tag refs were preserved."
