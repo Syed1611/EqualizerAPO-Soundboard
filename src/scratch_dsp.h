@@ -1,114 +1,125 @@
 #ifndef APO_SCRATCH_DSP_H
 #define APO_SCRATCH_DSP_H
-/* Scratch Edition pitch-preserving overlap-add scrub.
-   Input grains ALWAYS play at 1.0x source sample speed (signed for reverse).
-   The cursor controls where grains originate, not their within-grain pitch.
-   Optional waveform-similarity alignment reduces comb filtering at seams.
-   Header-only, freestanding C, deterministic and allocation-free per sample.
+/* Scratch Edition v0.9.3: single-grain waveform-synchronized scrubbing.
+   Speed/direction are controlled by the waveform cursor (which decides where
+   the next source segment begins); pitch is set independently by the per-pad
+   live Pitch/Auto Sweep slider (which sets the source read increment).
+   Most samples are read ONCE without overlaying dissimilar voices. Only the
+   short overlap at each slice transition is crossfaded. Freestanding, no
+   allocations and no CRT/math library required in the VST/controller.
 */
 typedef struct {
- double phase[2];        /* 0..1 through each fixed-duration output grain */
- double origin[2];       /* input sample position at grain start */
- int direction[2];       /* signed, locked for each grain */
- int lastDirection;
- double grainHostFrames;
- double inputPerHost;
- double lastInputCursor;
+ double position, incomingPosition, cursorAtStart;
+ double step, frameInGrain;
+ double grainFrames, fadeFrames;
  float lastOutput;
- int initialized;
+ int direction, incomingDirection, crossfade, initialized;
 } ApoScratchStretch;
-
 static double scratch_abs_d(double x){return x<0?-x:x;}
-static double scratch_clamp_d(double x,double low,double high){return x<low?low:x>high?high:x;}
-/* Weight is smooth at the boundaries. We normalize the sum explicitly.
-   This polynomial raised-cosine substitute needs no C math runtime. */
-static double scratch_win(double t){if(t<=0.0||t>=1.0)return 0.0;double v=t*(1.0-t);return v*v;}
+static double scratch_clamp_d(double x,double lo,double hi){return x<lo?lo:(x>hi?hi:x);}
 static float scratch_read_source(const float*s,unsigned long long count,double at){
- if(!s||!count)return 0;
- if(at<0)at=0;if(at>(double)(count-1))at=(double)(count-1);
+ if(!s||!count)return 0.0f;
+ if(at<=0.0)return s[0];
+ if(at>=(double)(count-1))return s[count-1];
  unsigned long long i=(unsigned long long)at;
  unsigned long long i0=i?i-1:i,i2=i+1<count?i+1:i,i3=i2+1<count?i2+1:i2;
- double t=at-(double)i,tt=t*t,ttt=tt*t;
+ double t=at-(double)i,t2=t*t,t3=t2*t;
  double a=s[i0],b=s[i],c=s[i2],d=s[i3];
- return (float)(0.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*tt+(-a+3*b-3*c+d)*ttt));
+ return (float)(0.5*((2.0*b)+(-a+c)*t+(2.0*a-5.0*b+4.0*c-d)*t2+(-a+3.0*b-3.0*c+d)*t3));
 }
-static void scratch_stretch_init(ApoScratchStretch*v,double cursor,unsigned srcRate,unsigned outputRate){
- if(!srcRate)srcRate=48000;if(!outputRate)outputRate=48000;
- v->grainHostFrames=(double)outputRate*0.096; /* 96 ms, clearer voice freeze */
- if(v->grainHostFrames<192)v->grainHostFrames=192;
- v->inputPerHost=(double)srcRate/(double)outputRate;
- v->phase[0]=0.0;v->phase[1]=0.5;
- v->direction[0]=v->direction[1]=v->lastDirection=1;
- v->origin[0]=cursor-v->grainHostFrames*v->inputPerHost*0.5;
- v->origin[1]=v->origin[0]-v->grainHostFrames*v->inputPerHost*0.5;
- v->lastInputCursor=cursor;v->lastOutput=0;
- v->initialized=1;
+static void scratch_stretch_init(ApoScratchStretch*v,double cursor,unsigned sourceRate,unsigned outputRate){
+ if(!sourceRate)sourceRate=48000;if(!outputRate)outputRate=48000;
+ /* ~78 ms segments and ~11 ms seam, independent of source pitch. */
+ v->grainFrames=(double)outputRate*0.078;
+ v->fadeFrames=(double)outputRate*0.011;
+ if(v->grainFrames<120)v->grainFrames=120;
+ if(v->fadeFrames<16)v->fadeFrames=16;
+ if(v->fadeFrames>v->grainFrames*0.25)v->fadeFrames=v->grainFrames*0.25;
+ v->step=(double)sourceRate/(double)outputRate;
+ v->position=cursor-v->grainFrames*v->step*0.42;
+ v->incomingPosition=v->position;
+ v->cursorAtStart=cursor;
+ v->frameInGrain=0;
+ v->direction=v->incomingDirection=1;
+ v->crossfade=0;v->lastOutput=0.0f;v->initialized=1;
 }
-/* Optional bounded correlation search for a smooth junction.
-   At a 48k input, a ±7ms search costs < 10k samples per hop (~48ms).
-   Correlation uses native source samples and never resamples by cursor velocity. */
-static double scratch_align_grain(const ApoScratchStretch*v,int oldGrain,int newDirection,
-        double target,const float*src,unsigned long long count,unsigned sr){
- if(count<16||!src||!sr)return target;
- double inputGrain=v->grainHostFrames*v->inputPerHost;
- double previous=v->origin[oldGrain]+(double)v->direction[oldGrain]*v->phase[oldGrain]*inputGrain;
- /* Large instantaneous seek: prioritize following the mouse. */
- if(scratch_abs_d(previous-target)>inputGrain*1.8)return target;
- int radius=(int)((double)sr*0.007);
- if(radius>700)radius=700;if(radius<2)radius=2;
- int stride=radius/28;if(stride<1)stride=1;
- double best=target,scoreBest=-10000000.0;
- double half=inputGrain*0.5,measureStep=half/60.0;
- if(measureStep<0.5)measureStep=0.5;
- for(int shift=-radius;shift<=radius;shift+=stride){
-  double anchor=target+(double)shift;
-  /* Prioritize mouse accuracy when similarity is approximately tied. */
-  double cross=0,powA=0,powB=0;
-  for(int j=0;j<60;j++){
-   double hop=(double)j*measureStep;
-   float a=scratch_read_source(src,count,previous+(double)v->direction[oldGrain]*hop);
-   float b=scratch_read_source(src,count,anchor+(double)newDirection*hop);
-   cross+=(double)a*(double)b;powA+=(double)a*a;powB+=(double)b*b;
+/* Compare the outgoing seam to potential incoming segments, using a bounded
+   normalized cross-correlation search. This is a WSOLA-inspired matching step
+   rather than phasing two full length independent grains together. */
+static double scratch_align_seam(const ApoScratchStretch*v,const float*src,unsigned long long count,
+                                 double desired,int direction,unsigned srcRate){
+ if(!src||count<64)return desired;
+ int rad=(int)((double)srcRate*0.008);
+ if(rad<3)rad=3;if(rad>1000)rad=1000;
+ int stride=rad/24;if(stride<1)stride=1;
+ double step=v->step;
+ double fadeStep=v->fadeFrames/47.0;
+ double best=desired,bestScore=-1e9;
+ double powerOld=0.0;
+ float old[48];
+ for(int j=0;j<48;j++){
+  old[j]=scratch_read_source(src,count,v->position+(double)v->direction*step*(double)j*fadeStep);
+  powerOld+=(double)old[j]*old[j];
+ }
+ if(powerOld<1e-8)return desired;
+ for(int shift=-rad;shift<=rad;shift+=stride){
+  double candidate=desired+(double)shift;
+  double cross=0,energy=0;
+  for(int j=0;j<48;j++){
+   double next=candidate+(double)direction*step*(double)j*fadeStep;
+   float y=scratch_read_source(src,count,next);
+   cross+=(double)y*old[j];energy+=(double)y*y;
   }
-  double norm=(powA+powB)>1e-7?(2.0*cross/(powA+powB)):-0.5;
-  double score=norm-0.02*scratch_abs_d((double)shift)/(double)radius;
-  if(score>scoreBest){scoreBest=score;best=anchor;}
+  /* Use 2*cross/(A+B) instead of cosine to penalize severe volume mismatch. */
+  double score=2.0*cross/(powerOld+energy+1e-10)-0.012*scratch_abs_d((double)shift)/(double)rad;
+  if(score>bestScore){bestScore=score;best=candidate;}
  }
- return scoreBest>0.08?best:target;
+ return bestScore>0.10?best:desired;
 }
-/* rate: cursor speed in x1 units (e.g. 0.5 or -2.0), 0 on hold.
-   cursor: user's absolute cursor position in SOURCE sample frames.
-   This processor never changes within-grain playback rate, preserving pitch.
-*/
+/* pitchRatio=2^(semitones/12), independent from the cursor speed. A pitch
+   change is smoothed within ~12ms even while the mouse is held stationary. */
 static float scratch_stretch_render(ApoScratchStretch*v,const float*src,unsigned long long count,
-                 unsigned srcRate,unsigned outputRate,double cursor,double rate){
+                  unsigned srcRate,unsigned hostRate,double cursor,double cursorSpeed,double pitchRatio){
  if(!src||!count)return 0.0f;
- if(!v->initialized||v->grainHostFrames<1.0)scratch_stretch_init(v,cursor,srcRate,outputRate);
- if(rate>0.05)v->lastDirection=1;else if(rate< -0.05)v->lastDirection=-1;
- /* Start of the next slice is anchored near cursor; each slice plays at the
-    original sample rate so faster/slower pointer movement does NOT detune it. */
- double inputGrain=v->grainHostFrames*v->inputPerHost;
- double sum=0,wsum=0;
- for(int k=0;k<2;k++){
-  double p=v->phase[k];double weight=scratch_win(p);
-  double inputPos=v->origin[k]+(double)v->direction[k]*p*inputGrain;
-  sum+=(double)scratch_read_source(src,count,inputPos)*weight;
-  wsum+=weight;
+ if(!srcRate)srcRate=48000;if(!hostRate)hostRate=48000;
+ if(!v->initialized||v->grainFrames<1.0)scratch_stretch_init(v,cursor,srcRate,hostRate);
+ pitchRatio=scratch_clamp_d(pitchRatio,0.25,4.0);
+ double targetStep=(double)srcRate/(double)hostRate*pitchRatio;
+ double smooth=1.0/((double)hostRate*0.012);
+ if(smooth>1.0)smooth=1.0;
+ v->step+=(targetStep-v->step)*smooth;
+ int desiredDir=cursorSpeed< -0.045?-1:(cursorSpeed>0.045?1:v->direction);
+ double span=v->grainFrames*v->step;
+ int mustSwitch=(desiredDir!=v->direction);
+ /* Long-distance seeks become responsive without constantly re-anchoring
+    small mouse movements and causing phasey/choppy audio. */
+ if(scratch_abs_d(cursor-v->cursorAtStart)>span*1.15&&v->frameInGrain>v->fadeFrames*1.5)mustSwitch=1;
+ if(!v->crossfade&&(mustSwitch||v->frameInGrain>=v->grainFrames-v->fadeFrames)){
+  int direction=desiredDir;
+  double desired=cursor-(double)direction*span*0.42;
+  desired=scratch_clamp_d(desired,0.0,(double)(count-1));
+  v->incomingPosition=scratch_align_seam(v,src,count,desired,direction,srcRate);
+  v->incomingDirection=direction;
+  v->crossfade=1;v->frameInGrain=0.0;
  }
- float sample=wsum>1e-9?(float)(sum/wsum):v->lastOutput;
+ float sample=scratch_read_source(src,count,v->position);
+ if(v->crossfade){
+  float next=scratch_read_source(src,count,v->incomingPosition);
+  double t=scratch_clamp_d(v->frameInGrain/v->fadeFrames,0.0,1.0);
+  double blend=t*t*(3.0-2.0*t);
+  sample=(float)((double)sample*(1.0-blend)+(double)next*blend);
+  v->incomingPosition+=(double)v->incomingDirection*v->step;
+ }
+ v->position+=(double)v->direction*v->step;
+ v->frameInGrain+=1.0;
+ if(v->crossfade&&v->frameInGrain>=v->fadeFrames){
+  v->position=v->incomingPosition;
+  v->direction=v->incomingDirection;
+  v->cursorAtStart=cursor;
+  v->crossfade=0;
+  v->frameInGrain=v->fadeFrames;/* new grain has already rendered its first part */
+ }
  v->lastOutput=sample;
- double incr=1.0/v->grainHostFrames;
- v->phase[0]+=incr;v->phase[1]+=incr;
- for(int k=0;k<2;k++)if(v->phase[k]>=1.0){
-  v->phase[k]-=1.0;
-  int direction=v->lastDirection;
-  double target=cursor-(double)direction*inputGrain*0.5;
-  int other=1-k;
-  double matched=scratch_align_grain(v,other,direction,target,src,count,srcRate);
-  v->origin[k]=scratch_clamp_d(matched,-inputGrain*0.9,(double)count+inputGrain*0.9);
-  v->direction[k]=direction;
- }
- v->lastInputCursor=cursor;
  return sample;
 }
 #endif

@@ -1,21 +1,19 @@
-# Scratch Edition v0.9.2 (Experimental)
+# Scratch Edition v0.9.3 (Experimental)
 
-## Corrected
-- Scratch changes playback direction and effective speed but **not pitch**.
-- Eliminated the unintended 0.65x speed used when the mouse was motionless.
-- Switched from two 58ms triangular grains with variable input read rate to
-  96ms normalized, native-speed grains with overlap-add and waveform alignment.
-- Enter/exit transitions now crossfade between actual scratch and normal audio
-  instead of repeating a constant last sample during the release fade.
-- New Scratch pipe instance prevents old v0.9.1 and new v0.9.2 mismatches.
+## Fixed
+- Pitch slider no longer gets ignored during Scratch & Freeze. Manual pitch
+  and per-pad Auto Sweep apply live to scrubbed and held audio.
+- Mouse speed and direction stay independent from pitch setting.
+- Replaced continuously overlapped, phasey two-grain rendering with mostly
+  direct single-segment playback and short, correlation-matched seam crossfades.
+- Smooth pitch steps while scratching; entry blend uses selected pitch.
+- Scratch Edition pipe upgraded from v2 to v3 for controller/VST isolation.
 
 ## Preserved
-- Scratch Edition remains separate from v0.9.0 stable.
-- Existing pads, hotkeys, waveform Select Range, Auto Sweep, Diagnostics,
-  local monitoring, pitch/volume sliders, and theme controls remain.
+- Stable v0.9.0 remains unchanged.
+- Existing pad hotkeys, samples, selectable waveform, monitor output, and
+  experiment-specific configuration are retained.
 
 ## Known limitations
-- Strong reverse/fast mouse movements and audio transients can still produce
-  grains or audible seams; held freezes intentionally repeat a segment.
-- No real Windows/Equalizer APO test completed in the build environment.
-- Ogg/Opus native codec support still absent.
+- Granular freezing is not lossless and can repeat transients unnaturally.
+- Windows host and mic playback remain unverified in this build environment.
