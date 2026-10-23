@@ -1,6 +1,8 @@
 # APO Soundboard — Scratch Edition v1.0.0
 
-High-fidelity **Windows x64 VST2** soundboard for Equalizer APO, specifically intended for the microphone capture chain. This is the final feature-set candidate based directly on the supplied Scratch Edition **v0.9.10** source. The low-end/lightweight v0.9.0 edition remains entirely separate.
+High-fidelity **Windows x64 VST2** soundboard for Equalizer APO, specifically intended for the microphone capture chain. This is the final high-fidelity edition based directly on the supplied Scratch Edition **v0.9.10** source. The low-end/lightweight v0.9.0 edition remains entirely separate.
+
+**Status: final v1.0.0 — Windows-tested by the maintainer.** The lightweight edition stays on v0.9.0 and is not replaced.
 
 ## New in v1.0.0
 
@@ -41,7 +43,8 @@ This package contains the Windows binaries, C sources, icon PNG/ICO/native resou
 - Ten supplied offline test executables passed: eight full DSP suites, repeated scrub re-entry, and multi-pad transport. `test_scratch` ran its available checks but skipped an optional external `.raw` voice fixture not supplied here.
 - Clang static analyzer returned no issues for controller and DLL source.
 - App icon RT_GROUP_ICON (ID 101) and VERSIONINFO checked in the PE resource directory; full `.ico` includes sizes 16, 24, 32, 48, 64, 128, and 256 pixels.
-- **Not tested on an actual Windows machine:** Equalizer APO host integration, runtime icon display, hotkey focus, DPI, device unplug/replug, Defender scanning, playback performance and device driver compatibility. Treat this as a **v1.0.0 release candidate**, rather than proof that every runtime issue has been eliminated.
-- Release publication and on-machine Windows acceptance checks remain the maintainer's responsibility.
+- **Windows user acceptance:** The maintainer confirmed on 2026-10-23 that v1.0.0 runs correctly on their Windows setup. This validates their normal workflow, not every device, host version, driver or edge case.
+- **Not independently verified on Windows:** complete device unplug/replug matrix, DPI configurations, malware scanning and all driver combinations. The offline build and static-analysis results remain as recorded above.
+- **Release status:** v1.0.0 is the final Scratch Edition. The maintainer will publish the GitHub Release separately.
 
 See `BUILDING.txt`, `TESTING.txt`, `AUDIT.txt`, and `CHANGELOG.md`. This project is independent of Equalizer APO; source is MIT licensed.

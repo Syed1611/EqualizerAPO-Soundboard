@@ -11,5 +11,5 @@ Scratch Edition v1.0.0 — build and audit report
 - Monitor WinMM waveOutWrite failure is handled by disabling local monitoring and displaying device-specific status (Windows runtime check pending).
 - UI mode switch immediately refreshes selected pad and waveform.
 - No app logo in the DLL (VST DLL icon has no taskbar/window); DLL has version metadata.
-- No runtime Windows/Equalizer APO/Defender validation performed here.
-- GitHub, other editions and published releases untouched.
+- Maintainer confirmed normal v1.0.0 operation in their Windows environment on 2026-10-23. Full device/driver matrix, Defender scan, hot-unplug failure recovery and DPI variations remain unverified.
+- Scratch source branch was updated to v1.0.0. The lightweight main branch and previously published releases remain untouched; final GitHub Release publication is handled separately by the maintainer.

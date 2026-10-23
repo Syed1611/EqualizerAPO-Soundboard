@@ -10,7 +10,8 @@
 - Refreshes waveform and selected-pad status immediately when changing mode.
 - Locked both binaries to build 100000, `Scratch_v10` pipe and matching source.
 - Preserved all of v0.9.10 Scrub controls and bit-identical full-spectrum spectral DSP.
-- Offline tests and Win64 cross-compilation passed. On-machine Windows validation remains necessary.
+- Offline tests and Win64 cross-compilation passed. The maintainer confirmed v1.0.0 works on their Windows setup (2026-10-23). This is not broad device/driver certification.
+- v1.0.0 approved as the **final Scratch Edition**, not a prerelease.
 
 ## v0.9.10 — Repeated Scrub Audio Hotfix
 

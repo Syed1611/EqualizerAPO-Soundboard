@@ -13,4 +13,4 @@ Scratch Edition v1.0.0 — Windows acceptance checklist
 11. Check 44.1/48/96 kHz hosts, soundpad hotkeys when unfocused, controller close/restart and DPI scaling on a second display.
 12. Run Defender or comparable malware scan on the downloaded release archive on Windows.
 
-Offline build checks: all 10 test programs completed; test_scratch skipped an optional external raw voice fixture, documented in README.md. No live host or driver integration was available here.
+Offline build checks: all 10 test programs completed; test_scratch skipped an optional external raw voice fixture, documented in README.md. No live host or driver integration was available **during the cross-build**. On 2026-10-23, the maintainer separately confirmed v1.0.0 worked on their Windows setup. This general acceptance report should not be treated as confirmation that every numbered edge-case test above was completed.

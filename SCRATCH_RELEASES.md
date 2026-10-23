@@ -1,10 +1,10 @@
 # Scratch Edition releases
 
-These are the **previously published Scratch Edition** releases. Scratch Edition is a higher-resource alternate build; for a lighter option use [APO Soundboard v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
+These are the **previously published Scratch Edition** releases as verified before the v1.0.0 Release is created. Scratch Edition is a higher-resource alternate build; for a lighter option use [APO Soundboard v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
 
-**Current Scratch source candidate:** [v1.0.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze). This includes v0.9.9 Scrub playback controls, the v0.9.10 audio hotfix, and v1.0.0 icon/stability improvements. The v1.0.0 prerelease and ZIP asset will be published separately by the maintainer after Windows verification.
+**Final high-fidelity version:** **v1.0.0**, accepted by the maintainer on Windows on 2026-10-23. [Final source on the Scratch branch](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze) includes the v0.9.9 transport features, v0.9.10 buzz hotfix and final icon/stability improvements. The GitHub Release will be published manually by the maintainer using `scratch-v1.0.0`.
 
-**Most recent previously published Scratch download:** [v0.9.8 — Final Scratch Edition](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8) ([direct ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v0.9.8/APOSoundboard-ScratchEdition-v0.9.8-x64.zip)). Older builds are retained for development history and are superseded.
+**Historical Scratch download (superseded by v1.0.0):** [v0.9.8 — UI Polish](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8) ([direct ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v0.9.8/APOSoundboard-ScratchEdition-v0.9.8-x64.zip)). Older builds are retained for development history and are superseded.
 
 | Version | Changes | GitHub release / matching ZIP | Correct source commit |
 | --- | --- | --- | --- |
@@ -39,3 +39,14 @@ The version-specific source snapshots are preserved by their published `scratch-
 **Tag targets verified (2026-10-23):** All eight `scratch-v0.9.1`–`scratch-v0.9.8` Git tags now resolve to their correct Scratch-version source commits, exactly as listed above. GitHub's automatically generated **Source code** ZIP/TAR downloads therefore follow the appropriate version. For installation, use the **attached release ZIP** containing the matched Windows x64 DLL and controller, not an auto-generated source archive. The attached ZIPs and their published checksums are unchanged. See [RELEASING.md](RELEASING.md) for ongoing maintenance.
 
 GitHub Releases are repository-wide, so both editions share one release list and one **Latest** label. Use the dedicated edition download links above rather than GitHub's generic `/releases/latest` URL.
+
+## Final and intermediate versions
+
+| Version | Release status | Description |
+| --- | --- | --- |
+| v0.9.9 | Not published; superseded | Introduced Scrub click-to-takeover, pause-on-release, selected-pad Play/Pause/Stop, Spacebar, cursor retention, and playback indicators. An entry-blend regression could cause buzzing. Do not recommend for installation. |
+| v0.9.10 | Local hotfix; superseded | Fixed the v0.9.9 repeated-drag buzz by correcting the scrub-entry fade and removing previous-output feedback. Preserved the high-fidelity DSP and all new Scrub controls. |
+| v1.0.0 | **Final** (publish as `scratch-v1.0.0`) | Added the native Windows logo/icon, executable and DLL version metadata, monitor-device resilience, clearer diagnostics, UI consistency, and final polish. Full v0.9.10 Scrub audio and controls retained. Accepted on the maintainer's Windows system. |
+
+The earlier eight published prereleases use their original attached ZIPs and their own historical tagged source. **Do not create v0.9.9 or v0.9.10 tags that point to the v1.0.0 source tree.** The source branch only contains v1.0.0 as its current head. For the final `scratch-v1.0.0` tag, select the latest `experimental/scratch-freeze` commit after release-status documentation updates.
+

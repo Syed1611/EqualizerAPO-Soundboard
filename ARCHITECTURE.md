@@ -45,11 +45,11 @@ Every released source snapshot can be accessed by its published `scratch-v0.9.1`
 
 MIT. This project is not affiliated with Equalizer APO.
 
-## v1.0.0 release candidate
+## v1.0.0 final edition
 
 - `AppIcon.ico`, `AppIcon.png`: waveform/red-cursor branding.
 - `AppIcon.res`, `PluginVersion.res`: Windows RT_GROUP_ICON and VERSIONINFO resources for the matched release binaries.
 - `BUILD_VERSION=100000` and `Scratch_v10` named pipe; use the matched controller and VST DLL.
 - `tests/test_transport.c` and `tests/test_scrub_reentry.c` cover per-pad control and re-entry safeguards.
 - `src/scratch_dsp.h` remains unchanged from the supplied v0.9.10 build.
-- The user will publish a prerelease asset after Windows acceptance checks; this repository update does not create a GitHub Release.
+- The maintainer confirmed the v1.0.0 build works in their Windows environment on 2026-10-23. The GitHub Release will be published separately as a **non-prerelease**; broader device/driver compatibility remains unverified.
