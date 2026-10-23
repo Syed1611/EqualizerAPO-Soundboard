@@ -53,7 +53,7 @@ The controller does **not** create a virtual microphone or virtual audio cable.
 
 ## Installation
 
-1. Download the latest release ZIP.
+1. Download the **[Lightweight v0.9.0 ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)**. Do not rely on GitHub's repository-wide Latest label, which may point to the Scratch Edition.
 2. Extract the **entire APOSoundboard folder** into Equalizer APO's VST folder:
 
    `C:\Program Files\EqualizerAPO\VSTPlugins\`
