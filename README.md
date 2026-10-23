@@ -2,7 +2,7 @@
 
 High-fidelity **Windows x64 VST2** soundboard for Equalizer APO, specifically intended for the microphone capture chain. This is the final high-fidelity edition based directly on the supplied Scratch Edition **v0.9.10** source. The low-end/lightweight v0.9.0 edition remains entirely separate.
 
-**Status: final v1.0.0 — Windows-tested by the maintainer.** The lightweight edition stays on v0.9.0 and is not replaced.
+**Status: final v1.0.0 — Windows-tested and [published](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0).** The lightweight edition stays on v0.9.0 and is not replaced.
 
 ## New in v1.0.0
 
@@ -45,6 +45,6 @@ This package contains the Windows binaries, C sources, icon PNG/ICO/native resou
 - App icon RT_GROUP_ICON (ID 101) and VERSIONINFO checked in the PE resource directory; full `.ico` includes sizes 16, 24, 32, 48, 64, 128, and 256 pixels.
 - **Windows user acceptance:** The maintainer confirmed on 2026-10-23 that v1.0.0 runs correctly on their Windows setup. This validates their normal workflow, not every device, host version, driver or edge case.
 - **Not independently verified on Windows:** complete device unplug/replug matrix, DPI configurations, malware scanning and all driver combinations. The offline build and static-analysis results remain as recorded above.
-- **Release status:** v1.0.0 is the final Scratch Edition. The maintainer will publish the GitHub Release separately.
+- **Release status:** v1.0.0 is the final Scratch Edition and is [published on GitHub](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0) as the current Latest release. The tested release tag points to the final source commit `2ae349f`.
 
 See `BUILDING.txt`, `TESTING.txt`, `AUDIT.txt`, and `CHANGELOG.md`. This project is independent of Equalizer APO; source is MIT licensed.
