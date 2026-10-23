@@ -1,31 +1,16 @@
-Scratch Edition v0.9.8 — Windows regression checklist
+Scratch Edition v1.0.0 — Windows acceptance checklist
 
-1. Select Diagnostics, drag the window's bottom/right edges rapidly (repeat ~30 s).
-   EXPECT: six cards remain in their own grid positions with no doubled borders,
-   leftover text, overlapping lines or content from the previous layout.
-2. Switch Soundboard <-> Diagnostics repeatedly at several window sizes.
-   EXPECT: no old page pixels or diagnostics borders persist; both tabs repaint.
-3. Toggle Tools > Dark Mode while viewing the Soundboard, without changing pads.
-   EXPECT: the status line, waveform instructions, selected-pad summary and file
-   strip immediately reflect the new theme.
-4. Toggle Tools > Dark Mode while viewing Diagnostics.
-   EXPECT: all six cards and text update immediately with no ghost outlines.
-5. Resize while switching tabs and alternating themes.
-   EXPECT: no old text or borders; final layout correct after drag stops.
-6. On Soundboard -> Select Range, select a short range.
-   EXPECT: blue selection area visible. Double-click resets to full range.
-7. Switch to Scratch.
-   EXPECT: blue selection area disappears (saved range is not reset).
-   EXPECT: red scratch cursor and normal pitch-preserving scratching/hold.
-8. Switch back to Select Range.
-   EXPECT: saved blue selection reappears; dragging changes the range only.
-9. Verify the top tab appearance: selected tab connects to content divider,
-   inactive tab is recessed, labels display without square brackets.
-10. Play a pad, scratch forward/backward, hold, change Pitch/Auto Sweep, release.
-    EXPECT: same sound behavior as v0.9.7 (no DSP changes).
-11. Exit old Scratch controller before starting v0.9.8. Test Open panel.
-    EXPECT: v0.9.8 controller connects to v0.9.8 DLL, not an older version.
-12. Confirm stable v0.9.0 DLL and controller are unaffected.
+1. Run the controller, inspect the title bar, taskbar, Alt+Tab and Explorer: the cyan waveform/red vertical line icon should appear at all sizes.
+2. Right-click EXE and VST DLL > Properties > Details: FileVersion 1.0.0.0.
+3. In Equalizer APO capture/microphone chain, load `APOSoundboardScratch_v1.0.0.dll`, open its matching controller and confirm it connects with no protocol/build mismatch.
+4. Play multiple pads; in Scrub, left-click a playing pad at different waveform positions, drag, hold, release to pause, and resume with Play and Space. Other pads must continue unaffected.
+5. Repeat 10+ fast drag-release-drag cycles. No persistent buzz/skrr, clicks or jumps; verify Pitch and Auto Sweep independently.
+6. Switch Soundboard/Diagnostics, Select Range/Scrub, Light/Dark and resize repeatedly. Look for blank controls, stale text, borders, flashing and misalignment.
+7. Verify Space does nothing outside the Scrub waveform mode, while editing labels/values or during hotkey capture.
+8. Select local Monitor. Unplug/disconnect the audio output while listening; monitoring must fail cleanly, report device error and not stop the mic VST stream. Reconnect, refresh and manually reenable. This test must be done cautiously, at safe volume.
+9. Verify peak and host-output clipped frames are distinct from VST ring underruns and monitor underruns/overruns/errors in Diagnostics.
+10. Check config migration from previous Scratch versions, pad reload/remove, missing files, corrupted config backup and graceful shutdown; monitor RAM/handles/GDI counts for leaks.
+11. Check 44.1/48/96 kHz hosts, soundpad hotkeys when unfocused, controller close/restart and DPI scaling on a second display.
+12. Run Defender or comparable malware scan on the downloaded release archive on Windows.
 
-Automated offline tests exercise source-level DSP behavior and x64 compilation;
-this Linux environment does not provide Windows/Equalizer APO UI runtime tests.
+Offline build checks: all 10 test programs completed; test_scratch skipped an optional external raw voice fixture, documented in README.md. No live host or driver integration was available here.

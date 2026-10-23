@@ -11,7 +11,7 @@
 #define SW_SHOWNORMAL 1
 #define PIPE_CHUNK_MAX 1024u
 #define PROTOCOL_VERSION 3u
-#define BUILD_VERSION 90800u
+#define BUILD_VERSION 100000u
 #define PIPE_AUDIO_IDLE 1u
 #define RING_FRAMES 4096u
 #define RING_MASK (RING_FRAMES-1u)
@@ -51,7 +51,7 @@ typedef struct { WL_U32 magic,frames,channels,flags; } PipeAudio;
 #define M_REQ   0x51525341u
 #define M_AUDIO 0x44525341u
 #define M_ACK   0x4b435341u
-static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','7',0 };
+static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','1','0',0 };
 
 typedef struct {
  AEffect effect;

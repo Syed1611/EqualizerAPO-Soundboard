@@ -1,12 +1,22 @@
-Scratch Edition v0.9.8 (freestanding Win64 C, LLVM/LLD)
+# Scratch Edition v1.0.0 cross-build
 
-Run in the src directory:
-clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.8.dll plugin.obj
-clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
-lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardScratchController.exe controller.obj
+Freestanding C, clang targeting Windows x64, lld-link; no MSVC CRT.
+Run from the `src/` folder with AppIcon.res and PluginVersion.res in its parent:
 
-Protocol-v3 / Scratch pipe v7: DLL and controller from the same version must be installed together.
-No third-party runtime libraries required.
-Offline test example, from package root:
-clang -O3 -I . tests/test_fidelity.c -lm -o test_fidelity && ./test_fidelity
+  clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
+  lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:../APOSoundboardScratch_v1.0.0.dll plugin.obj ../PluginVersion.res
+  clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
+  lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:../APOSoundboardScratchController.exe controller.obj ../AppIcon.res
+
+`AppIcon.res` contains Windows RT_ICON entries for 7 image sizes, RT_GROUP_ICON ID 101, and EXE VERSIONINFO. `PluginVersion.res` contains DLL VERSIONINFO. `AppIcon.png` and `AppIcon.ico` are supplied as artist/user-facing source assets. The application loads RT_GROUP_ICON 101 through dynamically resolved `LoadImageW` and sets large and small icons.
+
+Both source builds use BUILD_VERSION 100000 and Scratch_v10 pipe; communication protocol remains v3. Settings format unchanged from v0.9.10. Do not mix versioned binaries.
+
+Offline tests (from root, on a Linux/macOS C compiler):
+  for f in tests/test_*.c; do clang -O2 -I. -Wno-incompatible-library-redeclaration -Wno-ignored-attributes "$f" -lm -o "/tmp/$(basename "$f" .c)" && "/tmp/$(basename "$f" .c)"; done
+
+Check Windows PE resources and the VST2 export:
+  objdump -x APOSoundboardScratchController.exe
+  objdump -x APOSoundboardScratch_v1.0.0.dll
+
+No runtime tests on Windows were possible in the build environment.

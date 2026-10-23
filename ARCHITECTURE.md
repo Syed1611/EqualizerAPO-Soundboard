@@ -1,6 +1,6 @@
 # Scratch Edition architecture
 
-Scratch Edition v0.9.8 is the higher-resource alternative to [lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main). They have different DLL/controller pairs, local communication endpoints, and configuration.
+Scratch Edition v1.0.0 is the higher-resource alternative to [lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main). They have different DLL/controller pairs, local communication endpoints, and configuration.
 
 ## Equalizer APO integration
 
@@ -13,18 +13,18 @@ Scratch Edition v0.9.8 is the higher-resource alternative to [lightweight v0.9.0
 
 **Select Range** allows a user to edit the normal playback region, with blue selection shading.
 
-**Scratch** uses mouse movement to traverse source audio forward or backward without automatically changing the musical pitch. At a stationary cursor, it continuously synthesizes the sound around the selected position. The separate Pitch slider and Auto Sweep modulate scratch pitch live.
+**Scrub** uses mouse movement to traverse source audio forward or backward without automatically changing the musical pitch. At a stationary cursor, it continuously synthesizes the sound around the selected position. The separate Pitch slider and Auto Sweep modulate scratch pitch live.
 
 The high-fidelity Scratch path uses a full-spectrum 2048-point FFT overlap-add processor. When movement is suitable for near-natural-speed direct playback, it can read decoded PCM directly instead. Indefinite holds and extreme stretching are not lossless.
 
-The audio engine in v0.9.8 matches v0.9.7; the later release mainly improves UI behavior.
+The v0.9.8 full-spectrum synthesis is retained. v0.9.9 added per-pad Scrub playback control, v0.9.10 fixed a scrub re-entry fade regression, and v1.0.0 adds Windows icon resources, version information, monitor-device resilience, and diagnostics clarity.
 
 ## Windows UI
 
 - Windows-style Soundboard/Diagnostics tabs.
 - Parent-painted diagnostics panel boundaries to avoid overlapping native group-box redraw.
 - Coordinated resize and theme invalidation.
-- Distinct waveform visuals for Select Range and Scratch.
+- Distinct waveform visuals for Select Range and Scrub.
 - Bold, centered Speed/Depth numeric fields.
 
 ## Code and testing
@@ -44,3 +44,12 @@ Every released source snapshot can be accessed by its published `scratch-v0.9.1`
 ## License
 
 MIT. This project is not affiliated with Equalizer APO.
+
+## v1.0.0 release candidate
+
+- `AppIcon.ico`, `AppIcon.png`: waveform/red-cursor branding.
+- `AppIcon.res`, `PluginVersion.res`: Windows RT_GROUP_ICON and VERSIONINFO resources for the matched release binaries.
+- `BUILD_VERSION=100000` and `Scratch_v10` named pipe; use the matched controller and VST DLL.
+- `tests/test_transport.c` and `tests/test_scrub_reentry.c` cover per-pad control and re-entry safeguards.
+- `src/scratch_dsp.h` remains unchanged from the supplied v0.9.10 build.
+- The user will publish a prerelease asset after Windows acceptance checks; this repository update does not create a GitHub Release.

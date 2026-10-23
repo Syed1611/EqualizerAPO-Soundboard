@@ -1,8 +1,10 @@
 # Scratch Edition releases
 
-These are the **published Scratch Edition** releases. Scratch Edition is a higher-resource alternate build; for a lighter option use [APO Soundboard v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
+These are the **previously published Scratch Edition** releases. Scratch Edition is a higher-resource alternate build; for a lighter option use [APO Soundboard v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
 
-**Current Scratch download:** [v0.9.8 — Final Scratch Edition](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8) ([direct ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v0.9.8/APOSoundboard-ScratchEdition-v0.9.8-x64.zip)). Older builds are retained for development history and are superseded.
+**Current Scratch source candidate:** [v1.0.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze). This includes v0.9.9 Scrub playback controls, the v0.9.10 audio hotfix, and v1.0.0 icon/stability improvements. The v1.0.0 prerelease and ZIP asset will be published separately by the maintainer after Windows verification.
+
+**Most recent previously published Scratch download:** [v0.9.8 — Final Scratch Edition](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8) ([direct ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v0.9.8/APOSoundboard-ScratchEdition-v0.9.8-x64.zip)). Older builds are retained for development history and are superseded.
 
 | Version | Changes | GitHub release / matching ZIP | Correct source commit |
 | --- | --- | --- | --- |
