@@ -32,7 +32,7 @@ eb6c41be50bdd5ba0d895da8172d0de20c4d35de9e1c61996d8099f4fbab86ae  APOSoundboard-
 
 ## Historical source and tags
 
-The version-specific source snapshots v0.9.1–v0.9.7 are on [`experimental/scratch-release-history`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-release-history), while v0.9.8's current source remains on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze).
+The version-specific source snapshots are preserved by their published `scratch-v0.9.1`–`scratch-v0.9.8` tags. Use the GitHub tag selector or the source commit links in the table above. Ongoing Scratch development remains on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze).
 
 **Tag targets verified (2026-10-23):** All eight `scratch-v0.9.1`–`scratch-v0.9.8` Git tags now resolve to their correct Scratch-version source commits, exactly as listed above. GitHub's automatically generated **Source code** ZIP/TAR downloads therefore follow the appropriate version. For installation, use the **attached release ZIP** containing the matched Windows x64 DLL and controller, not an auto-generated source archive. The attached ZIPs and their published checksums are unchanged. See [RELEASING.md](RELEASING.md) for ongoing maintenance.
 
