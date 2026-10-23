@@ -28,12 +28,12 @@ b4ea819b4bd0a6b8604f94d0086f80aa8d109f9c1875af473a3ef1937c953a0f  APOSoundboard-
 af66cca7ea6f470eb36f8c8b1fe75bd18dd687d0de2bff0a6e4b1549259a8443  APOSoundboard-ScratchEdition-v0.9.6-experimental-x64.zip
 dbc41d53b5952d8204ed3ee2f518672d55e65cd4e2fb1ce589e920af1182b057  APOSoundboard-ScratchEdition-v0.9.7-experimental-x64.zip
 eb6c41be50bdd5ba0d895da8172d0de20c4d35de9e1c61996d8099f4fbab86ae  APOSoundboard-ScratchEdition-v0.9.8-x64.zip
-``
+```
 
 ## Historical source and tags
 
 The version-specific source snapshots v0.9.1–v0.9.7 are on [`experimental/scratch-release-history`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-release-history), while v0.9.8's current source remains on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze).
 
-**Tag correction still required:** On inspection after release publication, all eight `scratch-v0.9.x` tags point to the lightweight `main` commit `acfc7e2`. Consequently GitHub's automatically generated **Source code** ZIP/TAR links do not yet match these Scratch versions. Use the **attached release ZIPs** for installation and complete per-version source. See [RELEASING.md](RELEASING.md) for the exact historical commit map and tag repair instructions. The attached ZIPs and their digests are correct; this is a Git tag issue, not a binary issue.
+**Tag targets verified (2026-10-23):** All eight `scratch-v0.9.1`–`scratch-v0.9.8` Git tags now resolve to their correct Scratch-version source commits, exactly as listed above. GitHub's automatically generated **Source code** ZIP/TAR downloads therefore follow the appropriate version. For installation, use the **attached release ZIP** containing the matched Windows x64 DLL and controller, not an auto-generated source archive. The attached ZIPs and their published checksums are unchanged. See [RELEASING.md](RELEASING.md) for ongoing maintenance.
 
 GitHub Releases are repository-wide, so both editions share one release list and one **Latest** label. Use the dedicated edition download links above rather than GitHub's generic `/releases/latest` URL.
