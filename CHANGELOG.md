@@ -24,8 +24,6 @@
 - Layout geometry checked at narrow, medium, and wide sizes.
 - Windows GUI was subsequently checked and accepted on the project owner's setup; cross-system validation is still recommended.
 
-# Experimental Scratch Edition changelog
-
 ## v0.9.7 — Higher-fidelity hybrid scratch (experimental)
 
 - **Full-spectrum phase-vocoder scratch**: replaces the 192-slot / 112-tracked-peak oscillator engine from v0.9.6 with complex FFT overlap-add synthesis using all 1025 nonredundant bins of a 2048-point real spectrum. Source PCM noise, timbre and transient detail are no longer discarded by peak filtering.
