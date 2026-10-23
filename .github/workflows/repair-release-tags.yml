@@ -1,0 +1,63 @@
+name: Repair release tag targets (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type RETARGET to update 11 published tags to their audited source commits."
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  repair-tags:
+    if: ${{ inputs.confirm == 'RETARGET' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout all history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify and atomically repair published tag pointers
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == "Syed1611/EqualizerAPO-Soundboard" ]] || {
+            echo "Wrong repository"; exit 1;
+          }
+          git config user.name "APO Soundboard release maintenance"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags --force origin
+          leases=()
+          refs=()
+          while read -r tag old new; do
+            [[ -n "$tag" ]] || continue
+            remote="$(git ls-remote --refs --tags origin "refs/tags/$tag" | cut -f1)"
+            if [[ "$remote" != "$old" ]]; then
+              echo "STOP: $tag changed; expected $old, found $remote"
+              exit 1
+            fi
+            git cat-file -e "${new}^{commit}" || {
+              echo "Missing target commit $new for $tag"; exit 1;
+            }
+            echo "$tag: verified $old -> $new"
+            git tag -f "$tag" "$new"
+            leases+=("--force-with-lease=refs/tags/$tag:$old")
+            refs+=("refs/tags/$tag:refs/tags/$tag")
+          done <<'TAGS'
+          v0.8.8 0b68e1b7c62ab348e144a134806bacd053e5c0d3 34787dd90dc0bddefe35f0cf8557dc991b553443
+          v0.8.9 0b68e1b7c62ab348e144a134806bacd053e5c0d3 c174cee522ed3ba6ca4edcf6c374d6b0151d69cc
+          v0.8.10 0b68e1b7c62ab348e144a134806bacd053e5c0d3 242af02c218e4c8d648ebbeabb8c685feb25533d
+          scratch-v0.9.1 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 193a7e8c9f6423a2bca6430dcf2a8861c428f434
+          scratch-v0.9.2 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 9cf9d6de51b450fec359bf212e20f36fd1ce8754
+          scratch-v0.9.3 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 81a4039da680bb58c74f6a27a80251564f56cf87
+          scratch-v0.9.4 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 15a186eb850d2e2a00b9e7f2b4a0d9f9d7f448c3
+          scratch-v0.9.5 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 0c70c7cd7cc13d721b471059e89a24798d8b810d
+          scratch-v0.9.6 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 400b77e4153cde5e174baa276c26a9ace7588d55
+          scratch-v0.9.7 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 dcb92136e72868b7f229879e17d2c4459c7bf033
+          scratch-v0.9.8 acfc7e267abec010c3058a2c3aa8e4a27ca56ea4 199bc3966deb59324034c8f26a52fc247b276a77
+          TAGS
+          # All refs update together or the push fails. Protected/immutable tags
+          # may reject the whole push; attached GitHub Release ZIPs are untouched.
+          git push --atomic "${leases[@]}" origin "${refs[@]}"
+          echo "Successfully repaired ${#refs[@]} tag pointers"
