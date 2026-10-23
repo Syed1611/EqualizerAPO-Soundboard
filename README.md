@@ -17,6 +17,8 @@ This repository offers two separate editions:
 
 Choose the matching release asset and keep its DLL and controller together. Read the [Scratch Edition setup and source notes](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/README.md). The two editions are maintained independently.
 
+The Scratch Edition's [historical releases v0.9.1–v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/SCRATCH_RELEASES.md) have version-specific source tags and matched ZIP assets; the current lightweight source on this branch remains v0.9.0.
+
 ## Features
 
 - 16 soundboard pads with global hotkeys
@@ -53,7 +55,7 @@ The controller does **not** create a virtual microphone or virtual audio cable.
 
 ## Installation
 
-1. Download the **[Lightweight v0.9.0 ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)**. Do not rely on GitHub's repository-wide Latest label, which may point to the Scratch Edition.
+1. Download the **[Lightweight v0.9.0 ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)**. This direct link always selects the lightweight edition, even if the repository-wide Latest label changes.
 2. Extract the **entire APOSoundboard folder** into Equalizer APO's VST folder:
 
    `C:\Program Files\EqualizerAPO\VSTPlugins\`
