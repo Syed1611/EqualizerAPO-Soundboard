@@ -1,27 +1,29 @@
-# Scratch Edition v0.9.5 — Spectral Freeze & Clipping Fixes
+# APO Soundboard — Scratch Edition v0.9.6
 
-## Replaced
-- Removed the v0.9.4 held-audio short-loop system that repeatedly read the
-  previous/next 45–92 ms of recording and crossfaded the seam.
-- New frequency-domain spectral-peak synthesis. A single spectral analysis
-  captures the tone near the cursor; oscillators keep their own continuous
-  phases while the mouse is held still. The freeze never loops recorded audio.
-- Refined frequencies using phase differences from two windowed FFT frames.
+## Experimental: Unified Spectral Scrubbing
 
-## Improved
-- Smooth hold/move/hold transitions; live pitch and Auto Sweep still work.
-- Source-level spectral soft knee; additional scratch board headroom.
-- Smooth VST limiter instead of hard clipping on mixed output.
-- Bounded peak selection and heap-resident FFT buffers to avoid oversized
-  Windows worker-thread stack frames.
+- Replaced the moving-grain/WSOLA renderer with continuous spectral-peak
+  tracking and additive resynthesis. No 78ms recorded-frame hopping or
+  11ms moving-fragment seam blending remains.
+- Re-analysis occurs only when the waveform pointer position changes;
+  holding the cursor does not trigger new source segments.
+- Phase continuity retained while spectral content follows forward or
+  reverse cursor movement. The original pitch, user Pitch control and
+  Auto Sweep behavior are preserved independently of cursor speed.
+- Removed an overlapping board-mix soft saturator; introduced a single
+  dynamic linear VST output gain limiter for mic + soundboard and separate
+  monitor peak protection before converting to PCM16.
+- Diagnostics now label pre-limiter over-level input correctly; these
+  counters do not measure clipping after the limiter.
+- Removed mouse timestamp-based 90ms freeze switching.
+- Experimental v5 pipe isolates this engine from previous Scratch releases.
+- Added offline regression for hold, forward, reverse, live pitch, large
+  motion jumps, finite samples and peaks.
 
-## Kept
-- Direct Equalizer APO x64 microphone mixing; no virtual cables.
-- Select Range and Scratch & Freeze waveform modes, reverse/fast scrubbing.
-- Experimental DLL/controller/pipe/config remain separate from stable v0.9.0.
+### Limitations
 
-## Known limitations
-- Consonants and noisy clips can still sound artificial.
-- Dragging motion still uses the previous WSOLA-inspired segment engine.
-- Compatible OGG/Opus codec may be needed on Windows.
-- No Windows audio-hardware validation has been performed here.
+A spectral oscillator bank smooths timbral changes but cannot exactly
+reproduce all transients and noisy vocal components. This is an experimental
+quality revision, not proof of perfect real-time time stretching. Windows
+Equalizer APO listening and monitoring tests remain necessary. Stable
+v0.9.0 on GitHub was not changed.

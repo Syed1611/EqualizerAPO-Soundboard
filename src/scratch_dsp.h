@@ -1,49 +1,48 @@
+/* Scratch Edition v0.9.6: one continuous tracked spectral oscillator engine.
+   Both stationary and moving cursors synthesize coherent phases. Moving
+   updates frequency/amplitude targets from source FFT snapshots, rather than
+   playing 78 ms grains with old/new segment crossfades. The live Pitch knob
+   transposes independently of cursor speed. Experimental voice resynthesis.
+*/
 #ifndef APO_SCRATCH_DSP_H
 #define APO_SCRATCH_DSP_H
-/* Scratch Edition v0.9.5: spectral freeze (no short audio loops).
-   A pair of windowed FFT analyses identifies spectral peaks and refines their
-   instantaneous frequencies. The held sound is synthesized by continuous,
-   phase-preserving oscillators plus a small noise residual. No recordings are
-   replayed or wrapped during hold. Scrub motion retains the correlation-based
-   sample playback used in v0.9.4, crossfading on hold/move transitions.
-   Fully freestanding: no CRT, dynamic allocations or external DSP libraries.
-*/
 #define APO_SPECTRAL_FFT 4096u
-#define APO_SPECTRAL_PARTIALS 120u
+#define APO_SPECTRAL_PARTIALS 192u
+#define APO_SPECTRAL_TRACKED 112u
 #define APO_SPECTRAL_PI 3.1415926535897932384626433832795
 #define APO_SPECTRAL_TWO_PI 6.283185307179586476925286766559
 
 typedef struct {
- double frequencyHz;
- double amplitude;
+ double frequencyHz, targetHz;
+ double amplitude, targetAmplitude;
  double phaseCos,phaseSin;
  double stepCos,stepSin;
+ unsigned matched;
 } ApoSpectralPeak;
 typedef struct {
- /* Working spectrum stored with each heap-allocated client voice: large
-    FFT scratch buffers must not overflow the Windows DSP thread stack. */
+ /* Allocated within the heap-owned client voices, never on the worker stack. */
  double workRe[APO_SPECTRAL_FFT],workIm[APO_SPECTRAL_FFT];
  double workPrevRe[APO_SPECTRAL_FFT/2+1],workPrevIm[APO_SPECTRAL_FFT/2+1];
  double workMag[APO_SPECTRAL_FFT/2+1];
+ unsigned tempCandidates[APO_SPECTRAL_TRACKED*2];
+ double tempFreq[APO_SPECTRAL_TRACKED], tempAmp[APO_SPECTRAL_TRACKED];
+ double tempPhaseRe[APO_SPECTRAL_TRACKED], tempPhaseIm[APO_SPECTRAL_TRACKED];
  ApoSpectralPeak peaks[APO_SPECTRAL_PARTIALS];
  unsigned peakCount;
- unsigned outputRate,sourceRate;
- unsigned pitchUpdateFrames;
+ unsigned outputRate,sourceRate,pitchUpdateFrames;
  unsigned long long outputFrames;
- double currentPitch;
- double targetRms;
- double noiseAmplitude,noiseState,noisePrevious;
+ double currentPitch, noiseAmplitude,noiseState;
+ double gain;
  unsigned randomState;
  int valid;
 } ApoSpectralFreeze;
 typedef struct {
- double position, incomingPosition, cursorAtStart;
- double step, frameInGrain;
- double grainFrames, fadeFrames;
- float lastOutput;
- double freezeCursor,freezeMix;
- int freezeValid,wasStationary;
- int direction, incomingDirection, crossfade, initialized;
+ /* One continuous phase-coherent oscillator bank for BOTH motion and hold.
+    Source cursor motion updates timbre only; it never plays old/new source
+    fragments or crossfades between independent audio grains. */
+ double freezeCursor, lastAnalysisCursor;
+ unsigned long long lastAnalysisFrame;
+ int initialized,freezeValid,wasStationary;
  ApoSpectralFreeze spec;
 } ApoScratchStretch;
 static double scratch_abs_d(double x){return x<0?-x:x;}
@@ -60,52 +59,12 @@ static float scratch_read_source(const float*s,unsigned long long count,double a
 }
 static void scratch_stretch_init(ApoScratchStretch*v,double cursor,unsigned sourceRate,unsigned outputRate){
  if(!sourceRate)sourceRate=48000;if(!outputRate)outputRate=48000;
- /* ~78 ms segments and ~11 ms seam, independent of source pitch. */
- v->grainFrames=(double)outputRate*0.078;
- v->fadeFrames=(double)outputRate*0.011;
- if(v->grainFrames<120)v->grainFrames=120;
- if(v->fadeFrames<16)v->fadeFrames=16;
- if(v->fadeFrames>v->grainFrames*0.25)v->fadeFrames=v->grainFrames*0.25;
- v->step=(double)sourceRate/(double)outputRate;
- v->position=cursor-v->grainFrames*v->step*0.42;
- v->incomingPosition=v->position;
- v->cursorAtStart=cursor;
- v->frameInGrain=0;
- v->direction=v->incomingDirection=1;
- v->crossfade=0;v->lastOutput=0.0f;v->freezeCursor=cursor;v->freezeMix=0;v->freezeValid=0;v->wasStationary=0;v->spec.valid=0;v->spec.peakCount=0;v->initialized=1;
-}
-/* Compare the outgoing seam to potential incoming segments, using a bounded
-   normalized cross-correlation search. This is a WSOLA-inspired matching step
-   rather than phasing two full length independent grains together. */
-static double scratch_align_seam(const ApoScratchStretch*v,const float*src,unsigned long long count,
-                                 double desired,int direction,unsigned srcRate){
- if(!src||count<64)return desired;
- int rad=(int)((double)srcRate*0.008);
- if(rad<3)rad=3;if(rad>1000)rad=1000;
- int stride=rad/24;if(stride<1)stride=1;
- double step=v->step;
- double fadeStep=v->fadeFrames/47.0;
- double best=desired,bestScore=-1e9;
- double powerOld=0.0;
- float old[48];
- for(int j=0;j<48;j++){
-  old[j]=scratch_read_source(src,count,v->position+(double)v->direction*step*(double)j*fadeStep);
-  powerOld+=(double)old[j]*old[j];
- }
- if(powerOld<1e-8)return desired;
- for(int shift=-rad;shift<=rad;shift+=stride){
-  double candidate=desired+(double)shift;
-  double cross=0,energy=0;
-  for(int j=0;j<48;j++){
-   double next=candidate+(double)direction*step*(double)j*fadeStep;
-   float y=scratch_read_source(src,count,next);
-   cross+=(double)y*old[j];energy+=(double)y*y;
-  }
-  /* Use 2*cross/(A+B) instead of cosine to penalize severe volume mismatch. */
-  double score=2.0*cross/(powerOld+energy+1e-10)-0.012*scratch_abs_d((double)shift)/(double)rad;
-  if(score>bestScore){bestScore=score;best=candidate;}
- }
- return bestScore>0.10?best:desired;
+ v->initialized=1;v->freezeValid=0;v->wasStationary=1;
+ v->freezeCursor=cursor;v->lastAnalysisCursor=cursor;
+ v->lastAnalysisFrame=0;
+ v->spec.valid=0;v->spec.peakCount=0;v->spec.outputFrames=0;
+ v->spec.outputRate=outputRate;v->spec.sourceRate=sourceRate;
+ v->spec.currentPitch=1.0;v->spec.gain=1.0;
 }
 /* Sine/cosine polynomial evaluation on a reduced interval; no runtime CRT.
    Errors remain below 3e-6 in the argument range used by the FFT. */
@@ -163,114 +122,144 @@ static void scratch_fft(double*re,double*im){
 static unsigned scratch_random(unsigned*x){
  unsigned n=*x;n^=n<<13;n^=n>>17;n^=n<<5;*x=n;return n;
 }
-/* Analyze around the requested cursor exactly ONCE per distinct held position.
-   True frequencies come from phase changes between two staggered FFT windows.
-   Peak amplitudes are RMS-normalized to the source. */
-static void scratch_spectral_lock(ApoScratchStretch*v,const float*src,unsigned long long count,
-                                  unsigned sr,unsigned hostRate,double cursor){
- if(!src||!count)return;
- const unsigned n=APO_SPECTRAL_FFT,half=n/2,hop=n/8;
+/* Continuous spectral tracking. The analysis cursor is NEVER the starting
+   position of an audio grain: there is no time-domain source playback in
+   scratch mode. Analyses supply smoothly tracked amplitudes/frequencies;
+   every output sample is generated from continuously evolving phases. */
+static void scratch_spectral_capture(ApoScratchStretch*v,const float*src,unsigned long long count,
+                                    unsigned sr,unsigned hostRate,double cursor){
+ if(!src||count==0)return;
+ const unsigned n=APO_SPECTRAL_FFT, half=n/2, hop=n/8;
  ApoSpectralFreeze*sp=&v->spec;
- double*re=sp->workRe,*im=sp->workIm;
- double*prevRe=sp->workPrevRe,*prevIm=sp->workPrevIm;
- double*mag=sp->workMag;
+ double*re=sp->workRe,*im=sp->workIm,*prevRe=sp->workPrevRe,*prevIm=sp->workPrevIm,*mag=sp->workMag;
+ /* The two staggered source windows only ESTIMATE one spectral snapshot.
+    We never play or crossfade the audio within those windows. */
  double start=cursor-(double)(n/2+hop/2);
  double sourceEnergy=0.0;
- for(int pass=0;pass<2;pass++){
-  double windowStart=start+pass*(double)hop;
+ for(unsigned pass=0;pass<2;pass++){
+  double at=start+(double)pass*(double)hop;
   for(unsigned j=0;j<n;j++){
    double st,ct;scratch_sincos(APO_SPECTRAL_TWO_PI*(double)j/(double)(n-1),&st,&ct);
    double hann=0.5-0.5*ct;
-   double z=(double)scratch_read_source(src,count,windowStart+(double)j);
-   re[j]=z*hann;im[j]=0;
+   double ix=at+(double)j;
+   double z=(ix>=0.0&&ix<(double)count)?(double)scratch_read_source(src,count,ix):0.0;
+   re[j]=z*hann;im[j]=0.0;
    if(pass==1)sourceEnergy+=z*z*hann;
   }
   scratch_fft(re,im);
-  if(pass==0)for(unsigned i=0;i<=half;i++){prevRe[i]=re[i];prevIm[i]=im[i];}
+  if(!pass)for(unsigned j=0;j<=half;j++){prevRe[j]=re[j];prevIm[j]=im[j];}
  }
  for(unsigned k=0;k<=half;k++)mag[k]=scratch_sqrt(re[k]*re[k]+im[k]*im[k]);
- sp->peakCount=0;sp->outputFrames=0;sp->pitchUpdateFrames=0;sp->sourceRate=sr;sp->outputRate=hostRate;
- sp->currentPitch=1.0;sp->noiseState=0.0;sp->noisePrevious=0.0;
- sp->randomState=(unsigned)((unsigned long long)cursor)^0x7f4a7c15u;
- if(!sp->randomState)sp->randomState=0xab04e155u;
+ unsigned *candidates=sp->tempCandidates,nc=0;
  double maxMag=0.0;
  for(unsigned k=2;k<half-2;k++)if(mag[k]>maxMag)maxMag=mag[k];
- /* Select strongest peaks while avoiding duplicate bins from one FFT lobe. */
- unsigned candidates[APO_SPECTRAL_PARTIALS*2],candidateCount=0;
  for(unsigned k=2;k<half-2;k++){
   double m=mag[k];
-  if(m<maxMag*.0018||m<=mag[k-1]||m<mag[k+1])continue;
+  if(m<=mag[k-1]||m<mag[k+1]||m<maxMag*0.0016)continue;
   unsigned at=0;
-  while(at<candidateCount&&mag[candidates[at]]>=m)at++;
-  if(at>=APO_SPECTRAL_PARTIALS*2)continue;
-  if(candidateCount<APO_SPECTRAL_PARTIALS*2)candidateCount++;
-  for(unsigned j=candidateCount-1;j>at;j--)candidates[j]=candidates[j-1];
+  while(at<nc&&mag[candidates[at]]>=m)at++;
+  if(at>=APO_SPECTRAL_TRACKED*2)continue;
+  if(nc<APO_SPECTRAL_TRACKED*2)nc++;
+  for(unsigned j=nc-1;j>at;j--)candidates[j]=candidates[j-1];
   candidates[at]=k;
  }
- for(unsigned ix=0;ix<candidateCount&&sp->peakCount<APO_SPECTRAL_PARTIALS;ix++){
+ /* Use at most 112 spectral peaks to leave 80 slots for simultaneous
+    fade-outs. Tracking is one-to-one: an existing phase is never reset by
+    an update to the same acoustic partial. */
+ double *freq=sp->tempFreq,*amp=sp->tempAmp;
+ double *phaseRe=sp->tempPhaseRe,*phaseIm=sp->tempPhaseIm;
+ unsigned found=0;
+ for(unsigned ix=0;ix<nc&&found<APO_SPECTRAL_TRACKED;ix++){
   unsigned k=candidates[ix];
-  int duplicate=0;
-  for(unsigned t=0;t<sp->peakCount;t++){
-   double f=sp->peaks[t].frequencyHz*(double)n/(double)sr;
-   if(f>(double)k-2.0&&f<(double)k+2.0){duplicate=1;break;}
-  }
-  if(duplicate)continue;
-
-  ApoSpectralPeak*pk=&sp->peaks[sp->peakCount++];
-  double dotRe=re[k]*prevRe[k]+im[k]*prevIm[k];
-  double dotIm=im[k]*prevRe[k]-re[k]*prevIm[k];
-  double diff=scratch_atan2(dotIm,dotRe);
+  double diff=scratch_atan2(im[k]*prevRe[k]-re[k]*prevIm[k],
+                            re[k]*prevRe[k]+im[k]*prevIm[k]);
   double expected=APO_SPECTRAL_TWO_PI*(double)k*(double)hop/(double)n;
-  double corr=scratch_wrap_angle(diff-expected);
-  double bin=(double)k+corr*(double)n/(APO_SPECTRAL_TWO_PI*(double)hop);
-  /* Sub-bin phase differences of noise peaks can be unstable; clamp. */
+  double bin=(double)k+scratch_wrap_angle(diff-expected)*(double)n/(APO_SPECTRAL_TWO_PI*(double)hop);
   if(bin<(double)k-1.4||bin>(double)k+1.4)bin=(double)k;
-  if(bin<0.01)bin=0.01;
-  pk->frequencyHz=bin*(double)sr/(double)n;
-  pk->amplitude=4.0*mag[k]/(double)n;
+  double hz=bin*(double)sr/(double)n;
+  if(hz<24.0||hz>(double)hostRate*.47)continue;
+  int duplicate=0;
+  for(unsigned q=0;q<found;q++)if(scratch_abs_d(freq[q]-hz)<(double)sr/(double)n*1.7){duplicate=1;break;}
+  if(duplicate)continue;
+  freq[found]=hz;
+  amp[found]=4.0*mag[k]/(double)n;
   double phase=scratch_atan2(-im[k],re[k]);
   phase+=APO_SPECTRAL_TWO_PI*bin*((double)half-(double)hop/2.0)/(double)n;
-  scratch_sincos(phase,&pk->phaseSin,&pk->phaseCos);
-  pk->stepCos=1.0;pk->stepSin=0.0;
+  scratch_sincos(phase,&phaseIm[found],&phaseRe[found]);
+  found++;
  }
- double activeEnergy=0.0;
- for(unsigned i=0;i<sp->peakCount;i++)activeEnergy+=sp->peaks[i].amplitude*sp->peaks[i].amplitude*0.5;
- double rms=scratch_sqrt(sourceEnergy/(double)n*2.0);
- double estimated=scratch_sqrt(activeEnergy);
- /* Ensure exact numeric headroom without a nonlinear distortion effect. */
- double scale=estimated>1e-8?rms/estimated:0.0;
- if(scale>2.4)scale=2.4;
- if(scale<0)scale=0;
- if(rms>0.58)scale*=0.58/rms;
- for(unsigned i=0;i<sp->peakCount;i++)sp->peaks[i].amplitude*=scale;
- sp->targetRms=rms>0.58?0.58:rms;
- /* Small shaped noise floor so consonants never become pure metallic tones. */
- sp->noiseAmplitude=(rms>0.58?0.58:rms)*0.035;
- sp->valid=1;
+ double estimatedEnergy=0.0;
+ for(unsigned i=0;i<found;i++)estimatedEnergy+=amp[i]*amp[i]*.5;
+ double sourceRms=scratch_sqrt(sourceEnergy/(double)n*2.0);
+ double estimatedRms=scratch_sqrt(estimatedEnergy);
+ /* Conservative output target avoids transient peaks overwhelming the mic. */
+ double scale=estimatedRms>1e-8?sourceRms/estimatedRms:0.0;
+ if(scale>2.0)scale=2.0;
+ if(sourceRms>.42)scale*=.42/sourceRms;
+ for(unsigned i=0;i<found;i++)amp[i]*=scale;
+ if(!sp->valid){
+  sp->peakCount=0;sp->outputFrames=0;sp->pitchUpdateFrames=0;
+  sp->outputRate=hostRate;sp->sourceRate=sr;
+  sp->currentPitch=1.0;sp->gain=1.0;
+  sp->randomState=(unsigned)((unsigned long long)cursor)^0x6859ac31u;
+  sp->noiseAmplitude=0.0;sp->noiseState=0.0;
+  sp->valid=1;
+ }
+ for(unsigned i=0;i<sp->peakCount;i++){
+  sp->peaks[i].matched=0;
+  sp->peaks[i].targetAmplitude=0.0;
+ }
+ for(unsigned j=0;j<found;j++){
+  int best=-1;double bestScore=1e30;
+  for(unsigned i=0;i<sp->peakCount;i++){
+   ApoSpectralPeak*pk=&sp->peaks[i];
+   if(pk->matched||pk->amplitude<0.000015)continue;
+   double d=scratch_abs_d(pk->targetHz-freq[j]);
+   double allowed=16.0+freq[j]*.055;
+   if(d<allowed&&d/allowed<bestScore){bestScore=d/allowed;best=(int)i;}
+  }
+  if(best<0){
+   /* Prefer a completely faded or previously unused oscillator, rather
+      than stealing a loud one (which would cause a phase discontinuity). */
+   for(unsigned i=0;i<sp->peakCount;i++){
+    if(!sp->peaks[i].matched&&sp->peaks[i].amplitude<0.000012){best=(int)i;break;}
+   }
+   if(best<0&&sp->peakCount<APO_SPECTRAL_PARTIALS)best=(int)sp->peakCount++;
+   if(best<0)continue;
+   ApoSpectralPeak*pk=&sp->peaks[best];
+   pk->amplitude=0.0;pk->frequencyHz=freq[j];
+   pk->phaseCos=phaseRe[j];pk->phaseSin=phaseIm[j];
+   pk->stepSin=0.0;pk->stepCos=1.0;
+  }
+  ApoSpectralPeak*pk=&sp->peaks[best];
+  pk->targetHz=freq[j];pk->targetAmplitude=amp[j];pk->matched=1;
+ }
+ /* Dry consonants/noise are difficult to hold spectrally. Keep a subdued
+    deterministic residual so formants dominate, without broadband hiss. */
+ sp->noiseAmplitude=sourceRms*.006;
+ v->lastAnalysisCursor=cursor;v->lastAnalysisFrame=sp->outputFrames;
  v->freezeCursor=cursor;v->freezeValid=1;
 }
 static float scratch_spectral_render(ApoScratchStretch*v,double pitchRatio){
  ApoSpectralFreeze*sp=&v->spec;
  if(!sp->valid)return 0.0f;
- if(!(pitchRatio>0.0))pitchRatio=1.0;
  pitchRatio=scratch_clamp_d(pitchRatio,0.25,4.0);
- double follow=1.0/((double)(sp->outputRate?sp->outputRate:48000)*0.012);
- sp->currentPitch+=(pitchRatio-sp->currentPitch)*follow;
- if(sp->pitchUpdateFrames==0){
-  /* Refresh oscillator increments every 32 frames; preserve each phase. */
-  double inv=APO_SPECTRAL_TWO_PI*sp->currentPitch/(double)(sp->outputRate?sp->outputRate:48000);
-  for(unsigned k=0;k<sp->peakCount;k++){
-   ApoSpectralPeak*pk=&sp->peaks[k];
-   double d=pk->frequencyHz*inv;
-   scratch_sincos(d,&pk->stepSin,&pk->stepCos);
-  }
-  sp->pitchUpdateFrames=32;
- }
+ double rate=(double)(sp->outputRate?sp->outputRate:48000);
+ sp->currentPitch+=(pitchRatio-sp->currentPitch)/(rate*.012);
+ int refresh=sp->pitchUpdateFrames==0;
+ if(refresh)sp->pitchUpdateFrames=32;
  sp->pitchUpdateFrames--;
- double sample=0.0;
+ double out=0.0;
  for(unsigned k=0;k<sp->peakCount;k++){
   ApoSpectralPeak*pk=&sp->peaks[k];
-  sample+=pk->amplitude*pk->phaseCos;
+  /* Slow enough to avoid zipper noise, quick enough for cursor interaction. */
+  pk->amplitude+=(pk->targetAmplitude-pk->amplitude)/(rate*.013);
+  pk->frequencyHz+=(pk->targetHz-pk->frequencyHz)/(rate*.016);
+  if(refresh){
+   double d=APO_SPECTRAL_TWO_PI*pk->frequencyHz*sp->currentPitch/rate;
+   scratch_sincos(d,&pk->stepSin,&pk->stepCos);
+  }
+  out+=pk->amplitude*pk->phaseCos;
   double co=pk->phaseCos*pk->stepCos-pk->phaseSin*pk->stepSin;
   double si=pk->phaseCos*pk->stepSin+pk->phaseSin*pk->stepCos;
   pk->phaseCos=co;pk->phaseSin=si;
@@ -279,96 +268,38 @@ static float scratch_spectral_render(ApoScratchStretch*v,double pitchRatio){
    pk->phaseCos*=norm;pk->phaseSin*=norm;
   }
  }
- /* The residual is intentionally independent of fragment seams or loop indices. */
  unsigned rand=scratch_random(&sp->randomState);
- double noise=((double)(rand&0xffffffu)/8388608.0-1.0);
- sp->noiseState=0.74*sp->noiseState+0.26*noise;
- sample+=sp->noiseAmplitude*(noise*.55+sp->noiseState*.45);
+ double white=(double)(rand&0xffffffu)/8388608.0-1.0;
+ sp->noiseState=sp->noiseState*.87+white*.13;
+ out+=sp->noiseAmplitude*(white*.35+sp->noiseState*.65);
  sp->outputFrames++;
- /* Smooth 0.82-soft-knee ceiling: unlike the previous hard clamp, the
-    value and first derivative are continuous at the knee. */
- double absSample=scratch_abs_d(sample);
- if(absSample>0.82){
-  double above=absSample-0.82;
-  double y=0.82+0.17*above/(0.17+above);
-  sample=sample<0.0?-y:y;
- }
- return (float)sample;
+ /* Soft output safety net, NOT the primary mixing gain management. */
+ double a=scratch_abs_d(out);
+ if(a>.86){double extra=a-.86;double y=.86+.12*extra/(.12+extra);out=out<0?-y:y;}
+ return (float)out;
 }
-/* pitchRatio=2^(semitones/12), independent from the cursor speed. A pitch
-   change is smoothed within ~12ms even while the mouse is held stationary. */
+/* Motion and hold share exactly one oscillator state. Source position alone
+   chooses fresh timbral snapshots, never neighboring playback fragments.
+   A stopped cursor never retriggers analysis or loop/reverse synthesis. */
 static float scratch_stretch_render(ApoScratchStretch*v,const float*src,unsigned long long count,
-                  unsigned srcRate,unsigned hostRate,double cursor,double cursorSpeed,double pitchRatio){
+                 unsigned sr,unsigned hostRate,double cursor,double cursorSpeed,double pitchRatio){
+ (void)cursorSpeed;
  if(!src||!count)return 0.0f;
- if(!srcRate)srcRate=48000;if(!hostRate)hostRate=48000;
- if(!v->initialized||v->grainFrames<1.0)scratch_stretch_init(v,cursor,srcRate,hostRate);
- pitchRatio=scratch_clamp_d(pitchRatio,0.25,4.0);
- double targetStep=(double)srcRate/(double)hostRate*pitchRatio;
- double smooth=1.0/((double)hostRate*0.012);
- if(smooth>1.0)smooth=1.0;
- v->step+=(targetStep-v->step)*smooth;
- /* Cursor speed 0 is a genuine, locked sound freeze rather than 0.1x
-    jitter between different snippets. Note: this doesn't change pitch. */
- int stationary=scratch_abs_d(cursorSpeed)<0.045;
- /* On first movement after a freeze, re-anchor to the CURRENT pointer.
-    The locked-loop output fades out while the new direct segment fades in. */
- if(!stationary&&v->wasStationary){
-  v->position=scratch_clamp_d(cursor,0.0,(double)(count-1));
-  v->cursorAtStart=cursor;
-  v->direction=cursorSpeed<0.0?-1:1;
-  v->frameInGrain=0.0;
-  v->crossfade=0;
+ if(!sr)sr=48000;if(!hostRate)hostRate=48000;
+ if(!v->initialized)scratch_stretch_init(v,cursor,sr,hostRate);
+ cursor=scratch_clamp_d(cursor,0.0,(double)(count-1));
+ if(!v->spec.valid){scratch_spectral_capture(v,src,count,sr,hostRate,cursor);}
+ else{
+  double diff=scratch_abs_d(cursor-v->lastAnalysisCursor);
+  unsigned long long since=v->spec.outputFrames-v->lastAnalysisFrame;
+  /* Every ~8ms at most, and only following an actual pixel/cursor change.
+     Holding does not interpolate ±1 audio frame or switch to a new mode. */
+  unsigned long long minHop=(unsigned long long)(hostRate/125u);
+  if(minHop<64)minHop=64;
+  if(diff>(double)sr*.00022&&since>=minHop)
+   scratch_spectral_capture(v,src,count,sr,hostRate,cursor);
  }
- v->wasStationary=stationary;
- if(stationary){
-  if(!v->freezeValid||scratch_abs_d(cursor-v->freezeCursor)>(double)srcRate*.030)
-   scratch_spectral_lock(v,src,count,srcRate,hostRate,cursor);
- }else if(v->freezeMix<=0.0)v->freezeValid=0;
- double blendRate=1.0/((double)hostRate*0.011);
- if(blendRate>1.0)blendRate=1.0;
- if(stationary){v->freezeMix+=blendRate;if(v->freezeMix>1.0)v->freezeMix=1.0;}
- else {v->freezeMix-=blendRate;if(v->freezeMix<0.0)v->freezeMix=0.0;}
- float frozen=0.0f;
- if(v->freezeMix>0.0&&v->freezeValid)frozen=scratch_spectral_render(v,pitchRatio);
- if(stationary&&v->freezeMix>=1.0){v->lastOutput=frozen;return frozen;}
- int desiredDir=cursorSpeed< -0.045?-1:(cursorSpeed>0.045?1:v->direction);
- double span=v->grainFrames*v->step;
- int mustSwitch=(desiredDir!=v->direction);
- /* Long-distance seeks become responsive without constantly re-anchoring
-    small mouse movements and causing phasey/choppy audio. */
- if(scratch_abs_d(cursor-v->cursorAtStart)>span*1.15&&v->frameInGrain>v->fadeFrames*1.5)mustSwitch=1;
- if(!v->crossfade&&(mustSwitch||v->frameInGrain>=v->grainFrames-v->fadeFrames)){
-  int direction=desiredDir;
-  double desired=cursor-(double)direction*span*0.42;
-  desired=scratch_clamp_d(desired,0.0,(double)(count-1));
-  v->incomingPosition=scratch_align_seam(v,src,count,desired,direction,srcRate);
-  v->incomingDirection=direction;
-  v->crossfade=1;v->frameInGrain=0.0;
- }
- float sample=scratch_read_source(src,count,v->position);
- if(v->crossfade){
-  float next=scratch_read_source(src,count,v->incomingPosition);
-  double t=scratch_clamp_d(v->frameInGrain/v->fadeFrames,0.0,1.0);
-  double blend=t*t*(3.0-2.0*t);
-  sample=(float)((double)sample*(1.0-blend)+(double)next*blend);
-  v->incomingPosition+=(double)v->incomingDirection*v->step;
- }
- v->position+=(double)v->direction*v->step;
- v->frameInGrain+=1.0;
- if(v->crossfade&&v->frameInGrain>=v->fadeFrames){
-  v->position=v->incomingPosition;
-  v->direction=v->incomingDirection;
-  v->cursorAtStart=cursor;
-  v->crossfade=0;
-  v->frameInGrain=v->fadeFrames;/* new grain has already rendered its first part */
- }
- if(v->freezeMix>0.0&&v->freezeValid){
-  double f=v->freezeMix;
-  f=f*f*(3.0-2.0*f);
-  sample=(float)((double)sample*(1.0-f)+(double)frozen*f);
- }
- if(!stationary&&v->freezeMix<=0.0)v->freezeValid=0;
- v->lastOutput=sample;
- return sample;
+ v->wasStationary=scratch_abs_d(cursor-v->lastAnalysisCursor)<(double)sr*.00022;
+ return scratch_spectral_render(v,pitchRatio);
 }
 #endif

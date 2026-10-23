@@ -201,7 +201,7 @@
 #define MONVOL_W g_monVolW
 #define MONVOL_H g_monVolH
 #define PROTOCOL_VERSION 3u
-#define BUILD_VERSION 90501u
+#define BUILD_VERSION 90600u
 #define MAX_DECODE_WORKERS 2
 #define PIPE_AUDIO_IDLE 0x00000001u
 #define PAD_EMPTY 0
@@ -246,7 +246,7 @@ typedef struct { WL_U32 magic,frames,channels,flags; } PipeAudio;
 #define M_REQ   0x51525341u
 #define M_AUDIO 0x44525341u
 #define M_ACK   0x4b435341u
-static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','4',0 };
+static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','5',0 };
 
 static WL_API g_api;
 static WL_HWND g_main=0,g_tabSoundButton=0,g_tabDiagButton=0,g_padButtons[PAD_COUNT],g_selectedText=0,g_statusText=0,g_nameEdit=0,g_applyNameButton=0,g_monitorButton=0,g_fileInfoText=0,g_monitorDeviceCombo=0,g_monitorVolumeText=0;
@@ -375,7 +375,7 @@ static WL_HGDIOBJ g_backBitmap=0,g_backOldBitmap=0;
 static int g_backW=0,g_backH=0;
 
 static const WL_WCHAR CLASS_NAME[]={'A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','C','t','r','l',0};
-static const WL_WCHAR WINDOW_TITLE[]={'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','S','c','r','a','t','c','h',' ','E','d','i','t','i','o','n',' ','v','0','.','9','.','5',' ','E','X','P','E','R','I','M','E','N','T','A','L',0};
+static const WL_WCHAR WINDOW_TITLE[]={'A','P','O',' ','S','o','u','n','d','b','o','a','r','d',' ','S','c','r','a','t','c','h',' ','E','d','i','t','i','o','n',' ','v','0','.','9','.','6',' ','E','X','P','E','R','I','M','E','N','T','A','L',0};
 static const WL_WCHAR BTN_CLASS[]={'B','U','T','T','O','N',0};
 static const WL_WCHAR STATIC_CLASS[]={'S','T','A','T','I','C',0};
 static const WL_WCHAR EDIT_CLASS[]={'E','D','I','T',0};
@@ -1047,7 +1047,25 @@ static int monitor_wave_open_device(WL_U32 sampleRate){
  void*h=0;if(pWaveOutOpen(&h,g_monitorWaveDeviceId,&f,0,0,0)!=0||!h){if(g_monitorWaveDeviceId!=WAVE_MAPPER&&pWaveOutOpen(&h,WAVE_MAPPER,&f,0,0,0)==0&&h){g_monitorWaveDeviceId=WAVE_MAPPER;g_monitorDeviceName[0]=0;}else return 0;}
  g_monitorWave=h;g_monitorWaveRate=sampleRate;for(int i=0;i<MONITOR_BUFFERS;i++)memset(&g_monitorWaveBuffers[i],0,sizeof(g_monitorWaveBuffers[i]));__atomic_store_n(&g_monitorDeviceRate,sampleRate,__ATOMIC_RELEASE);__atomic_store_n(&g_monitorBackendMode,3,__ATOMIC_RELEASE);return 1;
 }
-static WL_I16 monitor_wave_s16(float x){if(x>1.0f)x=1.0f;else if(x<-1.0f)x=-1.0f;return x>=0?(WL_I16)(x*32767.0f+0.5f):(WL_I16)(x*32768.0f-0.5f);}
+/* Standalone monitor has its own gain protection because it taps the board
+   BEFORE the microphone/VST limiter. Preserve PCM linearity; avoid the old
+   hard flat-top when more than one pad plays at once. */
+static float g_monitorSafeGain=1.0f;
+static float monitor_safe_sample(float x,WL_U32 sampleRate){
+ float a=x<0?-x:x;
+ float required=a>0.94f?0.94f/a:1.0f;
+ if(required<g_monitorSafeGain)g_monitorSafeGain=required;
+ else{
+  float release=1.0f/(float)((sampleRate?sampleRate:48000)*0.11f);
+  g_monitorSafeGain+=(required-g_monitorSafeGain)*release;
+ }
+ return x*g_monitorSafeGain;
+}
+static WL_I16 monitor_wave_s16(float x,WL_U32 sampleRate){
+ x=monitor_safe_sample(x,sampleRate);
+ if(x>0.999f)x=0.999f;else if(x< -0.999f)x=-0.999f;
+ return x>=0?(WL_I16)(x*32767.0f+0.5f):(WL_I16)(x*32768.0f-0.5f);
+}
 static void monitor_populate_devices(void){
  if(!g_monitorDeviceCombo)return;if(!monitor_wave_api_ready()){monitor_populate_devices_wasapi();return;}g_api.SendMessageW(g_monitorDeviceCombo,CB_RESETCONTENT,0,0);
  static const WL_WCHAR defName[]={'W','i','n','d','o','w','s',' ','D','e','f','a','u','l','t',0};WL_LRESULT idx=g_api.SendMessageW(g_monitorDeviceCombo,CB_ADDSTRING,0,(WL_LPARAM)defName);if(idx>=0)g_api.SendMessageW(g_monitorDeviceCombo,CB_SETITEMDATA,(WL_WPARAM)idx,(WL_LPARAM)WAVE_MAPPER);
@@ -1109,7 +1127,7 @@ static int monitor_open_wasapi(MonitorWasapi*m){
  __atomic_store_n(&g_monitorDeviceRate,m->rate,__ATOMIC_RELEASE);__atomic_store_n(&g_monitorBackendMode,m->eventDriven?1:2,__ATOMIC_RELEASE);__atomic_store_n((volatile WL_UPTR*)&g_monitorEventHandle,(WL_UPTR)(m->eventDriven?m->event:0),__ATOMIC_RELEASE);return 1;
 }
 static float monitor_clampf(float x){return x<-1.0f?-1.0f:(x>1.0f?1.0f:x);}
-static void monitor_store_frame(MonitorWasapi*m,WL_U8*base,WL_UINT frame,float sample){sample=monitor_clampf(sample*((float)__atomic_load_n(&g_monitorVolumeHalfPct,__ATOMIC_RELAXED)/200.0f));WL_U8*p=base+(WL_SIZE_T)frame*m->fmt->nBlockAlign;for(WL_U16 c=0;c<m->channels;c++){float v=(c<2)?sample:0.0f;WL_U8*q=p+(WL_SIZE_T)c*m->bytesPerSample;if(m->tag==MON_WAVE_FORMAT_IEEE_FLOAT){*(float*)q=v;}else if(m->bytesPerSample==2){WL_I32 z=(WL_I32)(v>=0?v*32767.0f+0.5f:v*32768.0f-0.5f);q[0]=(WL_U8)z;q[1]=(WL_U8)(z>>8);}else if(m->bytesPerSample==3){WL_I32 z=(WL_I32)(v>=0?v*8388607.0f+0.5f:v*8388608.0f-0.5f);q[0]=(WL_U8)z;q[1]=(WL_U8)(z>>8);q[2]=(WL_U8)(z>>16);}else{WL_I64 z=(WL_I64)(v>=0?v*2147483647.0f+0.5f:v*2147483648.0f-0.5f);q[0]=(WL_U8)z;q[1]=(WL_U8)(z>>8);q[2]=(WL_U8)(z>>16);q[3]=(WL_U8)(z>>24);}}}
+static void monitor_store_frame(MonitorWasapi*m,WL_U8*base,WL_UINT frame,float sample){sample=monitor_safe_sample(sample*((float)__atomic_load_n(&g_monitorVolumeHalfPct,__ATOMIC_RELAXED)/200.0f),m->rate);WL_U8*p=base+(WL_SIZE_T)frame*m->fmt->nBlockAlign;for(WL_U16 c=0;c<m->channels;c++){float v=(c<2)?sample:0.0f;WL_U8*q=p+(WL_SIZE_T)c*m->bytesPerSample;if(m->tag==MON_WAVE_FORMAT_IEEE_FLOAT){*(float*)q=v;}else if(m->bytesPerSample==2){WL_I32 z=(WL_I32)(v>=0?v*32767.0f+0.5f:v*32768.0f-0.5f);q[0]=(WL_U8)z;q[1]=(WL_U8)(z>>8);}else if(m->bytesPerSample==3){WL_I32 z=(WL_I32)(v>=0?v*8388607.0f+0.5f:v*8388608.0f-0.5f);q[0]=(WL_U8)z;q[1]=(WL_U8)(z>>8);q[2]=(WL_U8)(z>>16);}else{WL_I64 z=(WL_I64)(v>=0?v*2147483647.0f+0.5f:v*2147483648.0f-0.5f);q[0]=(WL_U8)z;q[1]=(WL_U8)(z>>8);q[2]=(WL_U8)(z>>16);q[3]=(WL_U8)(z>>24);}}}
 static WL_U64 monitor_target_frames(WL_U32 sr){WL_U64 t=((WL_U64)sr*MONITOR_TARGET_MS)/1000ull;if(t<64)t=64;if(t>MONITOR_RING_FRAMES/3u)t=MONITOR_RING_FRAMES/3u;return t;}
 static WL_DWORD WL_CALLBACK monitor_thread_proc(void*ctx){
  (void)ctx;if(!monitor_wasapi_api_ready()){__atomic_store_n(&g_monitorThreadStarted,0,__ATOMIC_RELEASE);return 0;}MON_HRESULT chr=pMonCoInitializeEx(0,MON_COINIT_MULTITHREADED);int co=chr>=0;WL_DWORD taskIndex=0;WL_HANDLE mmcss=0;if(pAvSetMmThreadCharacteristicsW){static const WL_WCHAR task[]={'P','r','o',' ','A','u','d','i','o',0};mmcss=pAvSetMmThreadCharacteristicsW(task,&taskIndex);if(mmcss&&pAvSetMmThreadPriority)pAvSetMmThreadPriority(mmcss,1);}MonitorWasapi m;memset(&m,0,sizeof(m));WL_U32 localEpoch=0;double pos=0.0;int primed=0;float lastOut=0.0f,crossStart=0.0f;WL_U32 crossRemain=0,crossTotal=1;WL_U64 lastWake=0;WL_U32 testPhase=0;
@@ -1152,7 +1170,7 @@ static void monitor_process(void*owner,const float*audio,WL_U32 frames,WL_U32 sa
   int slot=-1,busy=0;for(int i=0;i<MONITOR_BUFFERS;i++){MonitorWaveBuffer*b=&g_monitorWaveBuffers[i];if(b->prepared){if(b->hdr.dwFlags&WHDR_DONE){if(pWaveOutUnprepareHeader(g_monitorWave,&b->hdr,sizeof(b->hdr))==0){b->prepared=0;memset(&b->hdr,0,sizeof(b->hdr));}}else busy++;}if(slot<0&&!b->prepared)slot=i;}
   if(sampleRate)__atomic_store_n(&g_monitorBufferMs,(WL_U32)(((WL_U64)busy*(WL_U64)frames*1000ull)/(WL_U64)sampleRate),__ATOMIC_RELAXED);__atomic_store_n(&g_monitorDeviceRate,sampleRate,__ATOMIC_RELAXED);__atomic_store_n(&g_monitorDriftPpm,0,__ATOMIC_RELAXED);__atomic_store_n(&g_monitorDeviceLatencyMs,0,__ATOMIC_RELAXED);
   if(slot<0||busy>=MONITOR_BUFFERS){__atomic_add_fetch(&g_monitorOverruns,1,__ATOMIC_RELAXED);return;}MonitorWaveBuffer*b=&g_monitorWaveBuffers[slot];float gain=(float)__atomic_load_n(&g_monitorVolumeHalfPct,__ATOMIC_RELAXED)/200.0f;
-  for(WL_U32 i=0;i<frames;i++){float v=(active&&audio)?sanitize_audio_sample(audio[i*2]):0.0f;tf=__atomic_load_n(&g_monitorTestFrames,__ATOMIC_RELAXED);if(tf){g_monitorWaveTestPhase+=440u;if(g_monitorWaveTestPhase>=sampleRate)g_monitorWaveTestPhase-=sampleRate;float q=(float)g_monitorWaveTestPhase/(float)sampleRate;float tri=q<0.5f?(q*4.0f-1.0f):(3.0f-q*4.0f);v+=tri*0.18f;__atomic_sub_fetch(&g_monitorTestFrames,1,__ATOMIC_RELAXED);}WL_I16 z=monitor_wave_s16(v*gain);b->samples[i*2]=z;b->samples[i*2+1]=z;}
+  for(WL_U32 i=0;i<frames;i++){float v=(active&&audio)?sanitize_audio_sample(audio[i*2]):0.0f;tf=__atomic_load_n(&g_monitorTestFrames,__ATOMIC_RELAXED);if(tf){g_monitorWaveTestPhase+=440u;if(g_monitorWaveTestPhase>=sampleRate)g_monitorWaveTestPhase-=sampleRate;float q=(float)g_monitorWaveTestPhase/(float)sampleRate;float tri=q<0.5f?(q*4.0f-1.0f):(3.0f-q*4.0f);v+=tri*0.18f;__atomic_sub_fetch(&g_monitorTestFrames,1,__ATOMIC_RELAXED);}WL_I16 z=monitor_wave_s16(v*gain,sampleRate);b->samples[i*2]=z;b->samples[i*2+1]=z;}
   memset(&b->hdr,0,sizeof(b->hdr));b->hdr.lpData=(char*)b->samples;b->hdr.dwBufferLength=frames*2u*sizeof(WL_I16);if(pWaveOutPrepareHeader(g_monitorWave,&b->hdr,sizeof(b->hdr))!=0){__atomic_add_fetch(&g_monitorErrors,1,__ATOMIC_RELAXED);return;}b->prepared=1;if(pWaveOutWrite(g_monitorWave,&b->hdr,sizeof(b->hdr))!=0){pWaveOutUnprepareHeader(g_monitorWave,&b->hdr,sizeof(b->hdr));b->prepared=0;__atomic_add_fetch(&g_monitorErrors,1,__ATOMIC_RELAXED);}return;
  }
  /* WASAPI fallback retained for systems where WinMM is unavailable. */
@@ -1182,13 +1200,14 @@ static int add_voice(Client*c,int pad){Sample*s=0;float a=0,b=1;spin_lock();s=g_
 static void sync_triggers(Client*c){WL_I64 stop=__atomic_load_n(&g_stopSerial,__ATOMIC_ACQUIRE);if(stop!=c->seenStop){for(int v=0;v<MAX_VOICES;v++)deactivate_voice(c,v);c->seenStop=stop;}for(int i=0;i<PAD_COUNT;i++){WL_I64 pst=__atomic_load_n(&g_padStopSerial[i],__ATOMIC_ACQUIRE);if(pst!=c->seenPadStop[i]){for(int v=0;v<MAX_VOICES;v++)if(c->voices[v].active&&c->voices[v].pad==i)deactivate_voice(c,v);c->seenPadStop[i]=pst;}WL_I64 now=__atomic_load_n(&g_triggerSerial[i],__ATOMIC_ACQUIRE),delta=now-c->seen[i];if(delta>8){__atomic_add_fetch(&g_droppedTriggers,(WL_U32)(delta-8),__ATOMIC_RELAXED);delta=8;}while(delta-->0)add_voice(c,i);c->seen[i]=now;}}
 static float cubic_sample(const float*s,WL_U64 frames,double start,double end,double pos){if(!s||!frames)return 0;WL_U64 lo=(WL_U64)start,hi=end>=1.0?(WL_U64)(end-1.0):0;if(hi>=frames)hi=frames-1;if(lo>hi)lo=hi;WL_U64 i1=(WL_U64)pos;if(i1<lo)i1=lo;if(i1>hi)i1=hi;WL_U64 i0=i1>lo?i1-1:i1,i2=i1<hi?i1+1:i1,i3=i2<hi?i2+1:i2;float t=(float)(pos-(double)((WL_U64)pos)),t2=t*t,t3=t2*t;float p0=s[i0],p1=s[i1],p2=s[i2],p3=s[i3];return 0.5f*((2.0f*p1)+(-p0+p2)*t+(2.0f*p0-5.0f*p1+4.0f*p2-p3)*t2+(-p0+3.0f*p1-3.0f*p2+p3)*t3);}
 static void publish_playheads(Client*c){WL_U64 bestAge[PAD_COUNT];WL_I32 bestPos[PAD_COUNT];for(int i=0;i<PAD_COUNT;i++){bestAge[i]=0;bestPos[i]=-1;}for(int v=0;v<MAX_VOICES;v++){Voice*vv=&c->voices[v];if(!vv->active||!vv->sample)continue;int p=vv->pad;__atomic_store_n(&g_padLastRenderMs[p],sweep_clock(),__ATOMIC_RELEASE);if(vv->age>=bestAge[p]){bestAge[p]=vv->age;double f=vv->sample->frames?vv->pos/(double)vv->sample->frames:0;if(f<0)f=0;if(f>1)f=1;bestPos[p]=(WL_I32)(f*1000000.0+0.5);}}for(int i=0;i<PAD_COUNT;i++)if(bestPos[i]>=0)__atomic_store_n(&g_playPosPpm[i],bestPos[i],__ATOMIC_RELEASE);}
-/* Cursor speed selects new positions/directions. The pad pitch slider
-   independently controls the source read rate (live and on held audio). */
+/* Cursor position selects timbre; the pitch slider independently transposes
+   the continuous spectral source (live and on held audio). */
 static float scratch_granular(Voice*v,WL_U32 hostRate,WL_U64 tick,int releasing){
  Sample*s=v->sample;if(!s||!s->frames)return 0.0f;
- WL_U64 moved=__atomic_load_n(&g_scratchMoveMs,__ATOMIC_ACQUIRE);
- WL_I32 rateMilli=__atomic_load_n(&g_scratchRateMilli,__ATOMIC_ACQUIRE);
- double speed=(!releasing&&tick>=moved&&tick-moved<90ull&&(rateMilli>35||rateMilli< -35))?(double)rateMilli*0.001:0.0;
+ /* Cursor position, rather than the age of the most recent Win32 mouse
+    event, drives continuous spectral tracking. No fake velocity timeout. */
+ (void)tick;(void)releasing;
+ double speed=0.0;
  double pointer=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)s->frames;
  /* Do not invent any playback velocity after the hand stops. */
  double base=(double)s->sampleRate/(double)(hostRate?hostRate:48000);
@@ -1279,10 +1298,9 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
    vv->volume+=(vv->targetVolume-vv->volume)*(float)smooth;
    sum+=q*vv->volume;
   }
-  /* Mix guard before crossing the named pipe. The mic remains untouched.
-     Preserve linear response up to 0.85 with a smooth saturation above it. */
-  float magnitude=sum<0?-sum:sum;
-  if(magnitude>0.85f){float above=magnitude-0.85f;float a=0.85f+0.14f*above/(0.14f+above);sum=sum<0?-a:a;}
+  /* Linear float board mix with deliberate scratch headroom. Do not
+     saturate a second time here: mic+board peak management belongs to
+     the final VST gain limiter, which sees BOTH signals. */
   sum=flush_tiny(sum);out[f*2]=sum;out[f*2+1]=sum;
  }
  publish_playheads(c);return 1;
@@ -1793,7 +1811,7 @@ static WL_LRESULT WL_CALLBACK wndproc(WL_HWND hwnd,WL_UINT msg,WL_WPARAM wp,WL_L
    g_waveDragging=2;g_scratchLastMs=0;__atomic_store_n(&g_scratchPad,g_selected,__ATOMIC_RELEASE);
    scratch_update_position(x,1);__atomic_store_n(&g_scratchHold,1,__ATOMIC_RELEASE);
    g_api.SetCapture(hwnd);if(!pad_visible_playing(g_selected))trigger_pad(g_selected);
-   set_status_ascii("SCRATCH ACTIVE: cursor controls speed/direction; Pitch changes tone. Hold for spectral freeze.");return 0;
+   set_status_ascii("SCRATCH ACTIVE: position tracks continuously; Pitch changes tone. Hold for spectral freeze.");return 0;
   }if(in_wave(x,y)&&sp){g_waveDragging=1;g_waveAnchor=wave_frac(x);g_api.SetCapture(hwnd);apply_wave_drag(g_waveAnchor,0);return 0;}if(in_volume_control(x,y)){g_controlDragging=1;g_api.SetCapture(hwnd);set_volume_from_x(x,0);return 0;}if(in_pitch_control(x,y)){g_controlDragging=2;g_api.SetCapture(hwnd);set_pitch_from_x(x,0);return 0;}if(in_monitor_control(x,y)){g_controlDragging=3;g_api.SetCapture(hwnd);set_monitor_volume_from_x(x,0);return 0;}}
  if(g_activeTab==0&&msg==WM_MOUSEMOVE){int mx=(WL_I16)LOWORD_(lp),my=(WL_I16)HIWORD_(lp);int hovered=in_volume_control(mx,my)?1:(in_pitch_control(mx,my)?2:(in_monitor_control(mx,my)?3:0));if(hovered!=g_sliderHovered){g_sliderHovered=hovered;invalidate_controls();}int old=g_waveHoverX;g_waveHoverX=in_wave(mx,my)?mx:-1;if(g_waveHoverX!=old){WL_RECT rr={WAVE_X,WAVE_Y,WAVE_X+WAVE_W,WAVE_Y+WAVE_H};g_api.InvalidateRect(g_main,&rr,WL_FALSE);}}
  if(g_activeTab==0&&msg==WM_MOUSEMOVE&&(wp&MK_LBUTTON)){int x=(WL_I16)LOWORD_(lp);if(g_waveDragging==2){scratch_update_position(x,0);return 0;}if(g_waveDragging==1){apply_wave_drag(wave_frac(x),0);return 0;}if(g_controlDragging==1){set_volume_from_x(x,0);return 0;}if(g_controlDragging==2){set_pitch_from_x(x,0);return 0;}if(g_controlDragging==3){set_monitor_volume_from_x(x,0);return 0;}}
@@ -1803,7 +1821,7 @@ static WL_LRESULT WL_CALLBACK wndproc(WL_HWND hwnd,WL_UINT msg,WL_WPARAM wp,WL_L
  if(g_activeTab==0&&msg==WM_LBUTTONDBLCLK){int x=(WL_I16)LOWORD_(lp),y=(WL_I16)HIWORD_(lp);if(in_wave(x,y)){if(!g_waveMode)reset_wave_range();return 0;}if(in_volume_control(x,y)){reset_volume();return 0;}if(in_pitch_control(x,y)){reset_pitch();return 0;}if(in_monitor_control(x,y)){reset_monitor_volume();return 0;}}
  if(msg==WM_COMMAND){int code=HIWORD_(wp),id=LOWORD_(wp);if((id==ID_MODE_SELECT||id==ID_MODE_SCRATCH)&&code==BN_CLICKED){
    end_scratch();g_waveMode=(id==ID_MODE_SCRATCH)?1:0;update_wave_mode_controls();invalidate_wave();
-   set_status_ascii(g_waveMode?"Scratch & Freeze: pitch stays original while speed changes; hold for clear audio freeze.":"Select Range restored.");return 0;
+   set_status_ascii(g_waveMode?"Scratch & Freeze: cursor moves spectral position; Pitch transposes independently.":"Select Range restored.");return 0;
  }if((id==ID_TAB_SOUND||id==ID_TAB_DIAG)&&code==BN_CLICKED){int newTab=(id==ID_TAB_DIAG)?1:0;if(newTab!=g_activeTab){end_scratch();hide_all_page_controls();g_pageVisibilityTab=-1;g_activeTab=newTab;g_savedTab=g_activeTab;update_tab_buttons();/* Clear the previous page while all page children are hidden. This is required because themed group boxes/statics can be transparent. */WL_RECT clr={0,0,g_clientW,g_clientH};g_api.InvalidateRect(g_main,&clr,WL_TRUE);g_api.UpdateWindow(g_main);layout_ui();force_full_page_repaint();}if(g_activeTab)update_diagnostics();else{update_selected_text();update_file_info();invalidate_wave();invalidate_controls();}return 0;}if(id>=ID_PAD_BASE&&id<ID_PAD_BASE+PAD_COUNT){int i=id-ID_PAD_BASE;if(code==BN_CLICKED||code==BN_DOUBLECLICKED){select_pad(i);Sample*sp=0;WL_I32 st;spin_lock();sp=g_pads[i].sample;st=g_pads[i].loadState;spin_unlock();if(code==BN_DOUBLECLICKED&&sp){trigger_pad(i);set_status_ascii(__atomic_load_n(&g_boardMuted,__ATOMIC_RELAXED)?"Board is muted; trigger ignored.":"Playing selected waveform range.");}else if(st==PAD_LOADING)set_status_ascii("This pad is still loading in the background.");else if(st==PAD_MISSING)set_status_ascii("This pad's file is missing. Use Tools > Relocate Missing Sounds.");else if(!sp)set_status_ascii("Empty pad selected. Right-click it to load audio.");else set_status_ascii("Pad selected. Right-click it for hotkey/audio/reset actions.");return 0;}return 0;}if(id==ID_MONITOR_DEVICE&&code==CBN_SELCHANGE){monitor_device_changed();update_diagnostics();return 0;}
  if(id==ID_LFO_RATE_EDIT&&code==EN_KILLFOCUS){sweep_update(1,0,1);return 0;}
  if(id==ID_LFO_DEPTH_EDIT&&code==EN_KILLFOCUS){sweep_update(2,0,1);return 0;}
