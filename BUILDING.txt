@@ -1,11 +1,10 @@
-From the src directory with LLVM clang + lld-link:
+LLVM clang + lld-link for Windows x64. In src/:
 
 clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c plugin.c -o plugin.obj
-lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.3.dll plugin.obj
+lld-link /dll /subsystem:windows /entry:DllMain /nodefaultlib /machine:x64 /export:VSTPluginMain /out:APOSoundboardScratch_v0.9.4.dll plugin.obj
 clang -target x86_64-pc-windows-msvc -O3 -ffreestanding -fno-stack-protector -fno-builtin -c controller.c -o controller.obj
 lld-link /subsystem:windows /entry:entry /nodefaultlib /machine:x64 /out:APOSoundboardScratchController.exe controller.obj
 
-Tests can be compiled on Linux/macOS with the regular C compiler; link -lm:
-clang -O2 test_scratch.c -lm -o test_scratch
-clang -O2 test_live_pitch.c -lm -o test_live_pitch
-The included test files use /mnt/data/... fixture paths; adjust them locally.
+For offline DSP tests, compile each test file in tests/ with clang -O2 -I.
+and -lm on Linux/macOS (C source uses fixture paths under /mnt/data; edit those
+if running on another computer). All DSP algorithms are in scratch_dsp.h.

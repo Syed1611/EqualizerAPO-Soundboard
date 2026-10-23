@@ -1,6 +1,6 @@
 #ifndef APO_SCRATCH_DSP_H
 #define APO_SCRATCH_DSP_H
-/* Scratch Edition v0.9.3: single-grain waveform-synchronized scrubbing.
+/* Scratch Edition v0.9.4: pitch-aware movement plus a stable locked freeze loop.
    Speed/direction are controlled by the waveform cursor (which decides where
    the next source segment begins); pitch is set independently by the per-pad
    live Pitch/Auto Sweep slider (which sets the source read increment).
@@ -13,6 +13,10 @@ typedef struct {
  double step, frameInGrain;
  double grainFrames, fadeFrames;
  float lastOutput;
+ /* Locked freeze: a fixed, waveform-matched forward-reading source loop.
+    Stationary playback does not reseek or run waveform matching each cycle. */
+ double freezeStart,freezeLength,freezeFade,freezePhase,freezeCursor,freezeMix;
+ int freezeValid,wasStationary;
  int direction, incomingDirection, crossfade, initialized;
 } ApoScratchStretch;
 static double scratch_abs_d(double x){return x<0?-x:x;}
@@ -41,7 +45,7 @@ static void scratch_stretch_init(ApoScratchStretch*v,double cursor,unsigned sour
  v->cursorAtStart=cursor;
  v->frameInGrain=0;
  v->direction=v->incomingDirection=1;
- v->crossfade=0;v->lastOutput=0.0f;v->initialized=1;
+ v->crossfade=0;v->lastOutput=0.0f;v->freezeStart=0;v->freezeLength=0;v->freezeFade=0;v->freezePhase=0;v->freezeCursor=cursor;v->freezeMix=0;v->freezeValid=0;v->wasStationary=0;v->initialized=1;
 }
 /* Compare the outgoing seam to potential incoming segments, using a bounded
    normalized cross-correlation search. This is a WSOLA-inspired matching step
@@ -76,6 +80,94 @@ static double scratch_align_seam(const ApoScratchStretch*v,const float*src,unsig
  }
  return bestScore>0.10?best:desired;
 }
+/* Select one stable loop by matching the waveform at its start and end.
+   It is deliberately LOCKED while stationary: the old v0.9.3 processor
+   repeatedly re-searched every ~78ms, sounding like a backward-forward echo.
+   All loop points are in SOURCE frames; output pitch is still controlled only
+   by the per-pad manual pitch/Auto Sweep source step. */
+static void scratch_freeze_lock(ApoScratchStretch*v,const float*src,unsigned long long count,
+                                unsigned srcRate,double cursor){
+ if(!count)return;
+ double max=(double)(count-1);
+ double start=cursor-(double)srcRate*0.073;
+ if(start<0.0)start=0.0;
+ if(start>max)start=max;
+ /* Around 72ms of forward source content. Never repeatedly bounce across
+    the cursor. Tight seams are selected by a small waveform similarity scan. */
+ int minL=(int)((double)srcRate*0.045),maxL=(int)((double)srcRate*0.092);
+ if(minL<24)minL=24;
+ if(maxL<minL+1)maxL=minL+1;
+ if(start+(double)maxL+128.0>max){
+  start=max-(double)maxL-128.0;
+  if(start<0.0)start=0.0;
+ }
+ if(start+(double)maxL+128.0>max)maxL=(int)(max-start-128.0);
+ if(maxL<minL){minL=maxL;if(minL<8)minL=8;}
+ if(maxL<minL){maxL=minL;start=0.0;}
+ const int points=48;
+ double firstEnergy=0;
+ float a[48];
+ for(int k=0;k<points;k++){
+  double at=start+(double)k*4.0;
+  a[k]=scratch_read_source(src,count,at);firstEnergy+=(double)a[k]*a[k];
+ }
+ double bestScore=-1e20;
+ int bestL=minL;
+ int stride=4;
+ for(int l=minL;l<=maxL;l+=stride){
+  double dot=0,energy=0;
+  for(int j=0;j<points;j++){
+   double t=(double)scratch_read_source(src,count,start+(double)l+(double)j*4.0);
+   dot+=(double)a[j]*t;energy+=t*t;
+  }
+  /* Favor phase continuity, not a loop that repeatedly phase-hunts. */
+  double score=2.0*dot/(firstEnergy+energy+1e-7);
+  score-=0.006*scratch_abs_d((double)l-(double)srcRate*.073)/((double)srcRate*.073+1.0);
+  if(score>bestScore){bestScore=score;bestL=l;}
+ }
+ /* Refine to single-sample precision around the winner. */
+ for(int l=bestL-stride;l<=bestL+stride;l++){
+  if(l<minL||l>maxL)continue;
+  double dot=0,energy=0;
+  for(int j=0;j<points;j++){
+   double t=(double)scratch_read_source(src,count,start+(double)l+(double)j*4.0);
+   dot+=(double)a[j]*t;energy+=t*t;
+  }
+  double score=2.0*dot/(firstEnergy+energy+1e-7);
+  score-=0.006*scratch_abs_d((double)l-(double)srcRate*.073)/((double)srcRate*.073+1.0);
+  if(score>bestScore){bestScore=score;bestL=l;}
+ }
+ v->freezeStart=start;
+ /* bestL is the phase-matched repeat interval. The extra fade frames
+    are outside the repeated interval; otherwise each wrap changes pitch. */
+ v->freezeFade=(double)srcRate*(bestScore>0.85?0.0025:0.0050);
+ v->freezeLength=(double)bestL+v->freezeFade;
+ if(v->freezeFade<6.0)v->freezeFade=6.0;
+ if(v->freezeFade>v->freezeLength*.24)v->freezeFade=v->freezeLength*.24;
+ double ahead=cursor-start;
+ if(ahead<0.0)ahead=0.0;
+ if(ahead>=v->freezeLength)ahead=v->freezeLength-v->freezeFade;
+ v->freezePhase=ahead;
+ v->freezeCursor=cursor;
+ v->freezeValid=1;
+}
+static float scratch_freeze_render(ApoScratchStretch*v,const float*src,unsigned long long count){
+ if(!v->freezeValid||v->freezeLength<8.0)return 0.0f;
+ double phase=v->freezePhase;
+ double from=v->freezeStart+phase;
+ float out=scratch_read_source(src,count,from);
+ const double blendStart=v->freezeLength-v->freezeFade;
+ if(phase>=blendStart){
+  double t=scratch_clamp_d((phase-blendStart)/v->freezeFade,0.0,1.0);
+  double blend=t*t*(3.0-2.0*t);
+  float next=scratch_read_source(src,count,v->freezeStart+(phase-blendStart));
+  out=(float)((double)out*(1.0-blend)+(double)next*blend);
+ }
+ phase+=v->step;
+ while(phase>=v->freezeLength)phase-=v->freezeLength-v->freezeFade;
+ v->freezePhase=phase;
+ return out;
+}
 /* pitchRatio=2^(semitones/12), independent from the cursor speed. A pitch
    change is smoothed within ~12ms even while the mouse is held stationary. */
 static float scratch_stretch_render(ApoScratchStretch*v,const float*src,unsigned long long count,
@@ -88,6 +180,30 @@ static float scratch_stretch_render(ApoScratchStretch*v,const float*src,unsigned
  double smooth=1.0/((double)hostRate*0.012);
  if(smooth>1.0)smooth=1.0;
  v->step+=(targetStep-v->step)*smooth;
+ /* Cursor speed 0 is a genuine, locked sound freeze rather than 0.1x
+    jitter between different snippets. Note: this doesn't change pitch. */
+ int stationary=scratch_abs_d(cursorSpeed)<0.045;
+ /* On first movement after a freeze, re-anchor to the CURRENT pointer.
+    The locked-loop output fades out while the new direct segment fades in. */
+ if(!stationary&&v->wasStationary){
+  v->position=scratch_clamp_d(cursor,0.0,(double)(count-1));
+  v->cursorAtStart=cursor;
+  v->direction=cursorSpeed<0.0?-1:1;
+  v->frameInGrain=0.0;
+  v->crossfade=0;
+ }
+ v->wasStationary=stationary;
+ if(stationary){
+  if(!v->freezeValid||scratch_abs_d(cursor-v->freezeCursor)>(double)srcRate*.030)
+   scratch_freeze_lock(v,src,count,srcRate,cursor);
+ }else if(v->freezeMix<=0.0)v->freezeValid=0;
+ double blendRate=1.0/((double)hostRate*0.011);
+ if(blendRate>1.0)blendRate=1.0;
+ if(stationary){v->freezeMix+=blendRate;if(v->freezeMix>1.0)v->freezeMix=1.0;}
+ else {v->freezeMix-=blendRate;if(v->freezeMix<0.0)v->freezeMix=0.0;}
+ float frozen=0.0f;
+ if(v->freezeMix>0.0&&v->freezeValid)frozen=scratch_freeze_render(v,src,count);
+ if(stationary&&v->freezeMix>=1.0){v->lastOutput=frozen;return frozen;}
  int desiredDir=cursorSpeed< -0.045?-1:(cursorSpeed>0.045?1:v->direction);
  double span=v->grainFrames*v->step;
  int mustSwitch=(desiredDir!=v->direction);
@@ -119,6 +235,12 @@ static float scratch_stretch_render(ApoScratchStretch*v,const float*src,unsigned
   v->crossfade=0;
   v->frameInGrain=v->fadeFrames;/* new grain has already rendered its first part */
  }
+ if(v->freezeMix>0.0&&v->freezeValid){
+  double f=v->freezeMix;
+  f=f*f*(3.0-2.0*f);
+  sample=(float)((double)sample*(1.0-f)+(double)frozen*f);
+ }
+ if(!stationary&&v->freezeMix<=0.0)v->freezeValid=0;
  v->lastOutput=sample;
  return sample;
 }
