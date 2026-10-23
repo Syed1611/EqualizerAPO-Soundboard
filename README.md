@@ -1,164 +1,41 @@
-# APO Soundboard
+# APO Soundboard — Scratch Edition v0.9.8
 
-A lightweight **64-bit VST2 soundboard for Equalizer APO** that mixes triggered audio directly into the processed microphone stream. It is designed to work without VB-Cable, Voicemeeter, or another virtual audio device for microphone routing.
+High-fidelity experimental/alternate Windows x64 VST2 soundboard for the microphone path in Equalizer APO. **This is the feature-rich alternative to [lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main), not a replacement for it.**
 
-> Current recommended build: **v0.9.0**
->
-> v0.3/v0.4 were experimental architecture branches. v0.8.3-v0.8.6 are preserved as superseded development releases. v0.9.0 is the recommended current build.
+This version contains the accepted v0.9.8 UI release candidate's **unchanged binaries and audio DSP**. The build has been exercised by the project owner on Windows; testing on other machines/configurations is still recommended.
 
 ## Features
 
-- 16 soundboard pads with global hotkeys
-- Single-click to select a pad
-- Double-click to play a pad
-- Right-click pad menu for pad-specific management
-- Selectable waveform region with live playback playhead and mouse cursor guide
-- Live per-pad volume while audio is already playing
-- Live per-pad pitch from **-12 to +12 semitones**
-- 0.5-unit fine steps with magnetic major snap points
-- HQ cubic resampling and host-rate conversion
-- Up to 32 overlapping voices with oldest-voice stealing
-- Global Stop All and Board Mute hotkeys
-- Custom pad names
-- Background audio loading and bounded decoded-sample memory
-- Missing-file relocation
-- Local soundboard monitoring to a Windows playback device
-- Responsive Soundboard / Diagnostics views with interactive pad/button states
-- Per-pad Auto Sweep (triangle-wave LFO), with Speed (0.1–5.0 Hz) and Depth (0.5–12.0 st)
-- Light/Dark themes with a persistent user preference
-- Pad hotkeys also select/highlight their pad without stealing application focus
-- Restores previous controller window size and position
-- Config backup, CRC validation and recovery
-- Audio engine self-test and detailed runtime diagnostics
-- No installer in current releases
-
-## How it works
-
-Equalizer APO hosts the versioned `APOSoundboard_vx.x.x.dll` in the microphone processing chain. A companion `APOSoundboardController.exe` owns the UI, loaded samples, global hotkeys, waveform regions, local monitoring, and persistent configuration.
-
-The controller and VST communicate over a **local Windows named pipe**. The final microphone + soundboard mix happens inside the VST in Equalizer APO's capture path.
-
-The controller does **not** create a virtual microphone or virtual audio cable.
+- All the baseline 16-pad soundboard features: global hotkeys, custom names, volume and Pitch, Auto Sweep, waveform, diagnostics, light/dark themes, and optional local monitor.
+- **Select Range mode:** drag the waveform to select a playback region; double-click resets the range. The blue range shading is visible only in this mode.
+- **Scratch mode:** drag right to move forward, left to reverse; cursor motion determines effective traversal rate while the Pitch slider (and Auto Sweep) adjusts pitch independently. Holding the cursor maintains a continuous, spectrally synthesized sound. Releasing resumes playback.
+- **High-fidelity full-spectrum DSP:** 2048-point FFT overlap-add synthesis retains spectral noise/detail rather than only selected peaks; near-natural-speed, neutral-Pitch playback may use decoded PCM directly.
+- **UI refinements in v0.9.8:** Windows-style Soundboard/Diagnostics tabs; immediate Light/Dark refresh of information strips; responsive diagnostics cards without independently repainting Win32 group boxes; improved resize and tab-switch layout; renamed Scratch mode; bold centered Speed/Depth numeric boxes.
+- **Separate edition:** version-specific Scratch named pipe, VST identity and controller EXE; independent pad config from stable v0.9.0.
 
 ## Installation
 
-1. Download the latest release ZIP.
-2. Extract the **entire APOSoundboard folder** into Equalizer APO's VST folder:
+1. Close earlier **Scratch Edition** controllers before upgrading.
+2. Unzip the **entire package** into its own directory, for example under `C:\Program Files\EqualizerAPO\VSTPlugins\APOSoundboardScratch\`.
+3. In Equalizer APO Configuration Editor (microphone/capture chain), choose **Plugins → VST plugin** and load `APOSoundboardScratch_v0.9.8.dll`.
+4. Keep `APOSoundboardScratchController.exe` next to the DLL; click **Open panel**.
+5. Choose **Scratch** above the waveform and drag an audio clip while it is playing. Use **Select Range** for ordinary playback-region editing.
 
-   `C:\Program Files\EqualizerAPO\VSTPlugins\`
+Do **not** mix a DLL from one Scratch build with a controller from another. Stable v0.9.0 remains available separately on `main`.
 
-3. Keep the versioned DLL and `APOSoundboardController.exe` together in that folder.
-4. In Equalizer APO Configurator, make sure Equalizer APO is enabled for the microphone/capture device you actually use.
-5. In Configuration Editor, add **Plugins -> VST plugin** to that microphone chain.
-6. Select the APOSoundboard DLL from the extracted folder.
-7. Click **Open panel** to launch the controller.
-8. Load sounds, assign hotkeys, and test with an application actively using the microphone.
+## Audio behavior and limitations
 
-When upgrading, replace **both** the DLL and controller from the same release.
+Moving the mouse changes source traversal and direction, not the selected pitch. Pitch and per-pad Auto Sweep remain live, even during stationary hold. Microphone mixing happens in Equalizer APO's VST; local output monitoring is optional. The full-spectrum scratch is not bit-identical to the original recording at arbitrary speeds or on freeze. Noise, consonants and difficult transients may sound synthetic. Some compressed formats require Windows Media Foundation codecs; no native Vorbis/Opus library is bundled.
 
-## Pad controls
+## Building and verification
 
-- **Left click:** select pad
-- **Double click:** play pad
-- **Right click:** open pad actions
-- **Waveform drag:** choose the playback region
-- **Volume:** 0-200%, 0.5% steps, magnetic 25% snap points
-- **Pitch:** -12 to +12 st, 0.5 st steps, magnetic 3 st snap points
-- **Double-click Volume:** reset to 100%
-- **Double-click Pitch:** reset to 0 st
+See [BUILDING.txt](BUILDING.txt), [TESTING.txt](TESTING.txt), [AUDIT.txt](AUDIT.txt) and [CHANGELOG.md](CHANGELOG.md). The release archive contains full C source and eight offline DSP tests. Both x64 binaries were compiled with clang/lld-link, the VST entry point was verified and static analysis found no issues. Those checks **do not replace** Windows/Equalizer APO runtime tests.
 
-Pitch is sampler-style resampling, so changing pitch also changes playback speed/duration.
+## Release channel
 
-### Pad right-click menu
-
-- Set Hotkey...
-- Clear Hotkey
-- Load / Replace Audio...
-- Reload Audio
-- Remove Audio
-- Rename Pad...
-- Reset Volume to 100%
-- Reset Pitch to 0
-- Reset Playback Range
-- Open File Location
-- Duplicate Pad To...
-- Reset Pad...
-
-Duplicate Pad copies the pad's audio/settings but deliberately does **not** duplicate its hotkey.
-
-## Appearance and Auto Sweep
-
-Switch **Tools → Dark Mode** to toggle the controller theme. The choice is remembered in `%LOCALAPPDATA%\APOSoundboard\config_v05.bin.theme`, separately from the main pad configuration. Some Windows-native dialogs and menu surfaces retain their operating-system appearance.
-
-**Auto Sweep** is an optional per-pad triangle-wave oscillator. It moves the live pitch slider automatically; because this sampler changes speed with pitch, the playback rate changes too. **Speed (Hz)** controls how quickly the sweep cycles, not an independent playback-speed function. **Depth (st)** sets its pitch range. Both fields accept numeric decimal input.
-
-## Audio formats
-
-- **WAV:** built-in decoder for common PCM and float WAV formats
-- **MP3, AAC/M4A, WMA, FLAC:** Windows Media Foundation
-- **OGG / OGA / Opus:** accepted through Windows Media Foundation when Windows exposes a compatible Vorbis/Opus decoder
-
-v0.9.0 does not bundle a native Vorbis/Opus decoder, so unusual OGG/Opus streams can still fail on some Windows installations.
-
-## Local monitoring
-
-The controller can play the soundboard locally while the same sound is mixed into the microphone path.
-
-- Monitoring starts **OFF** on every launch
-- Output device can be selected from the controller
-- Monitor volume is independent from the microphone/soundboard mix level
-- Headphones are recommended to avoid acoustic feedback into the microphone
-- The current stable build prefers the compatibility-oriented Windows playback path used by the v0.8.1/v0.8.2 line, with fallback handling retained
-
-## Diagnostics
-
-The Diagnostics view groups runtime information into responsive side-by-side cards:
-
-- **Audio Engine:** VST connection, sample rate, block size, ring fill, latency, underruns
-- **Output:** peak, clipped frames, board state, active voices, voice steals, dropped triggers
-- **Local Monitor:** device/backend, buffer, underruns/overruns, corrections, errors
-- **System:** RAM, peak RAM, sample RAM, CPU, threads, handles, GDI/USER objects
-- **Session:** reconnects, protocol mismatches, lowest ring fill, resampler/smoothing state, decode workers
-- **Status:** hotkey conflicts, backup/config state, Stop All / Board Mute shortcuts, uptime
-
-## Configuration
-
-Settings remain under:
-
-`%LOCALAPPDATA%\APOSoundboard\config_v05.bin`
-
-The filename is retained for compatibility even though the internal config format has evolved. Current v0.9.0 uses the v11 soundboard config format, with theme preference saved separately. Current builds keep atomic saving, CRC validation and `.bak` recovery.
-
-## Compatibility notes
-
-- Windows x64
-- Equalizer APO x64
-- VST2 host path used by Equalizer APO
-- Applications that bypass Windows system effects may also bypass Equalizer APO
-- Binaries are currently unsigned, so SmartScreen/antivirus may warn about an unknown application
-
-## Development
-
-This project is roughly **half hand-coded by me and half vibe-coded with AI assistance**. AI is used to help prototype, debug, audit and iterate, while the project is tested and shaped around actual Equalizer APO use.
-
-## Building from source
-
-The current source can be cross-compiled with LLVM `clang` + `lld-link`. See [BUILDING.txt](BUILDING.txt) for the exact current build commands.
-
-## Security / resource notes
-
-The project does not use networking, downloader logic, registry startup persistence, process injection or remote-thread injection. Decoded sample memory is bounded, and the real-time path is designed to avoid unnecessary allocation/locking.
-
-See [AUDIT.txt](AUDIT.txt) for current build checks.
-
-## Version history
-
-See [CHANGELOG.md](CHANGELOG.md) and the individual notes under [release-notes/](release-notes/).
+- **Lightweight / stable:** [main](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main), v0.9.0.
+- **Scratch Edition:** [experimental/scratch-freeze](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze), v0.9.8.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-## Disclaimer
-
-This is an independent project and is not affiliated with or endorsed by Equalizer APO.
+MIT — see [LICENSE](LICENSE). Not affiliated with Equalizer APO.

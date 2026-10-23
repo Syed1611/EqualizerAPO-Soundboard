@@ -1,15 +1,31 @@
-Windows runtime checklist — v0.9.0
+Scratch Edition v0.9.8 — Windows regression checklist
 
-[ ] Light theme: pad hover/selection/playing visibly distinct.
-[ ] Dark theme: background, pads, waveform, buttons, selected text, editable fields and Diagnostics remain readable.
-[ ] Tools > Dark Mode toggles repeatedly without stale/flickering pixels.
-[ ] Dark selection persists after closing/relaunching the controller.
-[ ] Soundboard / Diagnostics page switching in both themes.
-[ ] Three-line pad labels vertically centered, including empty pads.
-[ ] Monitor output combo lists devices and remains readable in both themes.
-[ ] Speed and Depth numeric inputs remain editable and accept decimals.
-[ ] Live pitch, waveform selection, Monitor ON/OFF and global hotkeys work as v0.8.10.
-[ ] Equalizer APO Apply / Apply automatically may reload plugin safely (host controls not intercepted).
-[ ] Minimum and maximum window resizing keeps controls usable.
+1. Select Diagnostics, drag the window's bottom/right edges rapidly (repeat ~30 s).
+   EXPECT: six cards remain in their own grid positions with no doubled borders,
+   leftover text, overlapping lines or content from the previous layout.
+2. Switch Soundboard <-> Diagnostics repeatedly at several window sizes.
+   EXPECT: no old page pixels or diagnostics borders persist; both tabs repaint.
+3. Toggle Tools > Dark Mode while viewing the Soundboard, without changing pads.
+   EXPECT: the status line, waveform instructions, selected-pad summary and file
+   strip immediately reflect the new theme.
+4. Toggle Tools > Dark Mode while viewing Diagnostics.
+   EXPECT: all six cards and text update immediately with no ghost outlines.
+5. Resize while switching tabs and alternating themes.
+   EXPECT: no old text or borders; final layout correct after drag stops.
+6. On Soundboard -> Select Range, select a short range.
+   EXPECT: blue selection area visible. Double-click resets to full range.
+7. Switch to Scratch.
+   EXPECT: blue selection area disappears (saved range is not reset).
+   EXPECT: red scratch cursor and normal pitch-preserving scratching/hold.
+8. Switch back to Select Range.
+   EXPECT: saved blue selection reappears; dragging changes the range only.
+9. Verify the top tab appearance: selected tab connects to content divider,
+   inactive tab is recessed, labels display without square brackets.
+10. Play a pad, scratch forward/backward, hold, change Pitch/Auto Sweep, release.
+    EXPECT: same sound behavior as v0.9.7 (no DSP changes).
+11. Exit old Scratch controller before starting v0.9.8. Test Open panel.
+    EXPECT: v0.9.8 controller connects to v0.9.8 DLL, not an older version.
+12. Confirm stable v0.9.0 DLL and controller are unaffected.
 
-Unable to complete Windows GUI and hardware validation in this environment.
+Automated offline tests exercise source-level DSP behavior and x64 compilation;
+this Linux environment does not provide Windows/Equalizer APO UI runtime tests.

@@ -1,318 +1,170 @@
-# Changelog
-
-All notable project changes are recorded here. Experimental and superseded releases are kept in the history instead of being silently removed.
-
-## [0.9.0] - Dark Mode & UI Polish
-
-### Added
-- Light/Dark appearance toggle under Tools with a persistent preference stored separately from the main config.
-- Dark styling for pad tiles, waveform, diagnostics, inputs, monitor device list and control panel.
-- Dark native title bar on Windows versions that support it.
-
-### Fixed / Polished
-- Owner-drawn button text is centered horizontally and vertically; multiline pad labels are centered as a unit.
-- Preserved the v0.8.10 controller layout, VST protocol v3 and audio engine.
-
-## [0.8.10] - Numeric Controls & Focus Styling
-
-### Fixed / Polished
-- Replaced stray horizontal focus lines on custom buttons with full focus outlines.
-- Integrated Auto Sweep controls with the dark pitch panel.
-- Speed and Depth values can be typed as decimals, confirmed with Enter or focus change, and reverted with Escape.
-- Speed rounds to 0.1 Hz in the 0.1–5.0 Hz range; Depth rounds to 0.5 st in the 0.5–12.0 st range.
-
-## [0.8.9] - Interface & Playback State Fixes
-
-### Fixed / Polished
-- Kept Volume alone on the left of the dark panel; grouped Pitch and Auto Sweep on the right.
-- Reconciled stale pad playing indicators when a VST stream stops requesting audio.
-- Reduced oversized bottom status area and redundant layout hide/show operations.
-- Improved focus/hover feedback on action controls and error messages for unsupported Opus-in-Ogg decoding.
-
-### Known Limitation
-- Native Ogg Vorbis/Opus decoding is not bundled; support still depends on Windows Media Foundation codecs.
-
-## [0.8.8] - Auto Sweep & Interactive Pads
-
-### Added
-- Per-pad Auto Sweep triangle LFO modulating live pitch and sampler playback rate.
-- Adjustable sweep Speed (Hz) and Depth (st), with an animated pitch slider.
-- More distinctive pad hover, selection and playing feedback.
-- Global hotkeys select/highlight their assigned pad without stealing window focus.
-- Red waveform cursor guide separate from the playback marker.
-- Remembered controller window coordinates.
-
-### Stability
-- Updated monitor source ownership to release an idle VST source for later monitored playback.
-- Expanded the bounded WinMM monitor queue capacity.
-- Guarded VST worker initialization when an earlier worker has not yet exited.
-
-## [0.8.7] - Earlier stable release
-
-### Fixed
-- Diagnostics now fully replaces the Soundboard page instead of leaving stale pad, waveform or slider pixels underneath.
-- Page visibility is enforced on every layout pass.
-- Diagnostics uses 3 columns at normal desktop widths and 2 columns at narrower widths.
-- Diagnostic cards are clamped to the visible client area.
-
-### Retained
-- v0.8.6 WinMM-compatible monitor path.
-- Responsive Soundboard / Diagnostics organization.
-- Pad right-click workflow and live audio-engine features.
-
-## [0.8.6] - Superseded by v0.8.7
-
-### Fixed
-- Replaced the unreliable native tab dependency with always-visible Soundboard / Diagnostics selector buttons.
-- Removed layout redraw suppression that could leave child controls invisible until clicked.
-- Explicitly repaints visible native controls after layout.
-- Keeps all 16 pads compact instead of stretching them with window height.
-- Empty pads now instruct the user to right-click to load.
-
-### Changed
-- Restored the v0.8.1/v0.8.2 WinMM `waveOut` local-monitor path as the preferred backend.
-- Restored compatible playback-device enumeration including Windows Default.
-- Explicit-device open failure falls back to Windows Default.
-- WASAPI remains a fallback path.
-
-### Known issue
-- Diagnostics could still visually overlap stale Soundboard controls on some systems; fixed in v0.8.7.
-
-## [0.8.5] - Superseded
-
-### Added
-- Soundboard and Diagnostics views.
-- Responsive/resizable UI concept.
-- Pad right-click menu for Set/Clear Hotkey, audio management, rename, resets, file location, duplication and full pad reset.
-- Tools menu with playback-device refresh and Monitor Test.
-- Side-by-side grouped diagnostic cards.
-
-### Changed
-- Main Soundboard view was simplified around pads, waveform, monitor controls, live Volume/Pitch and pad naming.
-- Config format added saved window size and selected view.
-
-### Known issues
-- Some native controls/tabs could fail to paint until clicked or be positioned incorrectly on real Windows systems.
-- The monitor/WASAPI path remained unreliable on some devices.
-- These issues led to the v0.8.6 compatibility rollback/hotfix.
-
-## [0.8.4] - Superseded
-
-### Changed
-- Returned the controller layout to the v0.8.2-style fixed UI after v0.8.3 layout regressions.
-- Retained non-UI monitor/audio optimizations from v0.8.3.
-- Relaxed exact-build matching while retaining protocol-v3 compatibility checks.
-
-### Known issue
-- WASAPI monitor initialization still failed on some real playback-device configurations.
-
-## [0.8.3] - Experimental / superseded
-
-### Experimented with
-- Event-driven WASAPI local monitoring.
-- Dedicated multimedia-priority monitor thread.
-- Circular monitor buffering.
-- Clock-drift correction between capture and playback devices.
-- Underrun/overrun recovery fades and monitor-specific diagnostics.
-- Resizable/DPI-aware controller layout.
-
-### Status
-- The monitor/audio ideas were useful, but the new layout produced clipped/missing controls on real Windows systems. The UI changes were rolled back afterward.
-
-## [0.8.2]
-
-### Added
-- OGG/OGA and Opus file extensions to the supported loading path through Windows Media Foundation.
-- Remove Audio.
-- Reset Pad.
-- Reload Audio.
-- Selected-file information and decoded-memory display.
-- Monitor output-device selection.
-- Independent local monitor volume.
-
-### Changed
-- Background decode/resample concurrency is bounded.
-- Additional compressed-file validation and decoded-value sanitizing.
-- Waveform generation is folded into decode/resample work where practical.
-- UI painting was further optimized to reduce startup and random flicker.
-
-### Notes
-- OGG/Opus decoding still depends on a compatible Windows Media Foundation decoder; v0.8.2 did not include a bundled native Vorbis/Opus decoder.
-
-## [0.8.1]
-
-### Added
-- Local soundboard monitoring to the Windows playback device.
-- Monitor ON/OFF control.
-- Monitor-specific drop/error telemetry.
-
-### Changed
-- Waveform/playhead and custom sliders use persistent GDI backbuffers.
-- Playhead refresh rate was reduced to lower repaint pressure.
-- Host-rate telemetry is applied to the live controller/monitor path when the APO host rate changes.
-
-## [0.8.0]
-
-### Added
-- True real-time per-pad pitch affecting voices already playing.
-- True real-time per-pad volume.
-- Parameter smoothing for live pitch/volume changes.
-- Live waveform playback playhead.
-- Background sample decoding.
-- Per-pad Loading / Missing / Decode Error states.
-- Host-rate sample conversion.
-- Missing-file relocation.
-- Oldest-voice stealing when all 32 voices are occupied.
-- Board Mute toggle and global Board Mute hotkey.
-- Audio Engine Self Test.
-- Controller/VST protocol v3 handshake and mismatch reporting.
-- Automatic reconnect handling and mic-only VST fallback when the controller disconnects.
-- Expanded performance/session diagnostics and Reset Statistics.
-
-### Performance
-- Lightweight atomic reads for live parameters.
-- Preallocated active voice/sample structures.
-- Deferred sample reclamation outside the mixer hot path.
-- Pipe request sizing follows the APO host block size.
-- Idle/deep-idle work reduction.
-- Denormal protection.
-- LLVM `-O3` optimization/vectorization where appropriate.
-
-## [0.7.0]
-
-### Added
-- HQ cubic pitch resampling.
-- Adaptive VST audio buffering.
-- Underrun counter and expanded host/audio diagnostics.
-- Custom pad names.
-- Active playing indicators for pads.
-- Global Stop All hotkey.
-- Live output peak and clipping indicator.
-
-### Changed
-- Controller/VST communication protocol upgraded to v2.
-- Pitch ratios are precomputed.
-- Mixer bypasses unnecessary processing while idle.
-- Existing v0.6.x configs are upgraded automatically when saved.
-
-### Performance
-- Reduced unnecessary locking while no voices are active.
-- Reduced idle mixer work.
-- Adaptive buffering reacts to underruns while maintaining a bounded latency target.
-
-## v0.6.4
-
-### Changed
-- Reduced per-pad pitch range from +/-24 st to **-12.0 to +12.0 semitones**.
-- Kept fine pitch adjustment at **0.5 st** and volume adjustment at **0.5 percentage point**.
-- Added visible external major tick marks to both sliders.
-- Added magnetic snap points:
-  - Volume: 0, 25, 50, 75, 100, 125, 150, 175, 200%.
-  - Pitch: -12, -9, -6, -3, 0, +3, +6, +9, +12 st.
-- Existing saved pitch values outside +/-12 st are clamped on load.
-
-## v0.6.3
-
-### Fixed
-- Hotkey capture temporarily unregisters soundboard hotkeys while listening for a new shortcut.
-- Trying to reuse an existing shortcut no longer plays the pad already bound to it.
-- Conflicting assignments are rejected immediately and existing hotkeys are restored after capture/cancel.
-- `WM_HOTKEY` events are ignored while capture mode is active.
-
-### Changed
-- Volume uses 0.5% steps.
-- Pitch uses 0.5-semitone steps.
-- Selected-pad values display decimal half-steps.
-
-## v0.6.2
-
-### Added
-- Hotkey conflict warnings for pad-to-pad conflicts and shortcuts rejected by Windows/another application.
-- `[CONFLICT]` indication on affected saved pads.
-- Built-in diagnostics strip.
-- Automatic config backup/recovery with staged writes and CRC validation.
-
-### Stability
-- Retained v0.6.1 resource/thread hardening.
-
-## v0.6.1
-
-### Fixed / hardened
-- VST worker thread must stop before its owning instance can be freed.
-- Media Foundation and COM shut down cleanly.
-- Single-instance mutex closes cleanly.
-- Worker threads no longer update GUI text directly across threads.
-- Decoded sample RAM is capped at 128 MiB per pad and 512 MiB total.
-- Reduced idle pipe polling wakeups.
-
-### Audit notes
-- No networking APIs, startup persistence, process injection, downloader logic or GPU rendering path.
-
-## v0.6.0
-
-### Fixed
-- Single-click selects a pad only.
-- Double-click plays the selected pad.
-- Empty pads no longer open the file dialog from a normal single click.
-
-### Changed
-- Replaced Volume +/- buttons with a horizontal drag control; double-click resets to 100%.
-- Replaced Pitch +/- buttons with a horizontal drag control; double-click resets to 0 st.
-- Waveform-region and multi-format behavior from v0.5 retained.
-
-## v0.5.0
-
-### Added
-- Returned to the known-working v0.2 VST/controller architecture.
-- Per-pad pitch control.
-- Selectable waveform with saved per-pad playback range.
-- Playback/hotkeys honor the selected waveform range.
-- Windows Media Foundation decoding path for additional formats beyond WAV.
-
-### Compatibility
-- Imports the old v0.2 `config.bin` and stores extended settings separately in `config_v05.bin`.
-
-## v0.4.0 - Experimental / superseded
-
-### Experimented with
-- Custom sampler-style controller UI.
-- Single-click select / double-click play interaction.
-- Volume and pitch controls.
-- Selectable waveform regions.
-- More audio formats through Media Foundation.
-- Minimize-to-tray behavior.
-- Persistent pipe thread and precomputed waveform peaks.
-
-### Status
-- This branch did not prove reliable in runtime testing and was discarded. v0.5 restarted from the working v0.2 architecture.
-
-## v0.3.0 - Experimental / superseded
-
-### Experimented with
-- A single-DLL architecture intended to remove the companion controller executable.
-- Internal controller launch through Windows rather than shipping an installer/helper executable.
-- Embedded custom UI and pitch controls.
-
-### Status
-- Equalizer APO did not expose the intended usable UI reliably. The approach was abandoned and the project returned to the two-file v0.2 architecture.
-
-## v0.2.0
-
-### Fixed
-- Implemented the VST editor dispatcher path expected by Equalizer APO, fixing the v0.1 **Open panel** crash.
-- Open Panel launches the controller safely.
-- Installer no longer launches the controller immediately after installation.
-- Removed the v0.1 startup behavior.
-
-## v0.1.0
-
-### Added
-- First 64-bit VST2 soundboard prototype for Equalizer APO.
-- 16 pads and global hotkeys.
-- WAV loading.
-- Per-pad volume.
-- Up to 32 overlapping voices.
-- Microphone passthrough plus soundboard mixing.
-- Board/Mic master levels and limiter.
-- Local named-pipe controller-to-VST bridge.
-- Reproducible source/build files and MIT license.
+# Experimental Scratch Edition changelog
+
+## v0.9.8 — Diagnostics, Resize, Themes & Waveform Modes (accepted UI release)
+
+- Replaced transparent Win32 BS_GROUPBOX diagnostics frames with complete
+  parent-painted card borders/titles. This eliminates the overlapping redraw
+  artifacts observed during simultaneous tab switching and window resizing.
+- Constrained the diagnostic grid to the visible client bounds rather than
+  growing card height beyond the window and clipping other cards.
+- Added synchronous parent+child invalidation on WM_SIZE and forced a complete
+  refresh of all currently displayed native text controls on theme toggle.
+- Windows-style connected top tabs (Soundboard / Diagnostics); selected tab
+  has no bottom border and uses the same color as the underlying page.
+- Select Range and Scratch have separate waveform visuals: range shading
+  appears only in Select Range; Scratch shows the red cursor without the range.
+- Renamed 'Scratch & Freeze' to 'Scratch'; per-mode instructions/status text.
+- Updated window title and build metadata to 0.9.8; isolated v7 IPC pipe.
+- Kept the v0.9.7 full-spectrum scratch audio DSP bit-for-bit unchanged.
+
+### Validation
+- Windows x64 controller and VST compile/link; VSTPluginMain export present.
+- Seven offline scratch-audio regression tests passed unchanged.
+- Clang static analyzer produced no findings after cleanup.
+- Layout geometry checked at narrow, medium, and wide sizes.
+- Windows GUI was subsequently checked and accepted on the project owner's setup; cross-system validation is still recommended.
+
+# Experimental Scratch Edition changelog
+
+## v0.9.7 — Higher-fidelity hybrid scratch (experimental)
+
+- **Full-spectrum phase-vocoder scratch**: replaces the 192-slot / 112-tracked-peak oscillator engine from v0.9.6 with complex FFT overlap-add synthesis using all 1025 nonredundant bins of a 2048-point real spectrum. Source PCM noise, timbre and transient detail are no longer discarded by peak filtering.
+- **Independent live Pitch preserved**: pitch shifts the assembled spectrum through cubic time-domain resampling, rather than remapping sparse spectral bins. Auto Sweep continues to control Pitch.
+- **Decoded PCM at natural speed**: an adaptive source read fades in near steady ±1× cursor movement when Pitch is neutral; special slowed/fast/frozen regions remain fully resynthesized.
+- **Transitions and timing**: audio-clocked source-motion estimate informed by recent GUI velocity; controlled crossfades into/out of Scratch; waveform scratch selection, left/right direction and indefinite hold unchanged.
+- **Separate instance**: pipe suffix `Scratch_v6`, v0.9.7 paired controller and DLL, existing experimental config compatibility. No stable v0.9.0 changes.
+- **Quality regression**: added identity fidelity, 44.1k→48k conversion, broadband-noise, live Pitch, motion/reverse, and held cursor tests; offline real voice decoded and used in testing.
+
+### Known limitations
+
+- Holding a single point indefinitely still needs spectral synthesis and can sound artificial on consonants or noisy audio. Perfect original quality at arbitrary speed/freeze is not physically achievable.
+- Actual Windows/Equalizer APO microphone and monitoring output was **not** runtime-tested; this is an experimental binary.
+
+## v0.9.6 — Continuous spectral motion / limiter changes
+
+- Single tracked-oscillator spectral engine for forward/reverse/hold, no old moving short-loop fragments.
+- Headroom and monitoring/VST clipping protection.
+
+
+---
+
+# Scratch Edition v0.9.5 — Spectral Freeze & Clipping Fixes
+
+## Replaced
+- Removed the v0.9.4 held-audio short-loop system that repeatedly read the
+  previous/next 45–92 ms of recording and crossfaded the seam.
+- New frequency-domain spectral-peak synthesis. A single spectral analysis
+  captures the tone near the cursor; oscillators keep their own continuous
+  phases while the mouse is held still. The freeze never loops recorded audio.
+- Refined frequencies using phase differences from two windowed FFT frames.
+
+## Improved
+- Smooth hold/move/hold transitions; live pitch and Auto Sweep still work.
+- Source-level spectral soft knee; additional scratch board headroom.
+- Smooth VST limiter instead of hard clipping on mixed output.
+- Bounded peak selection and heap-resident FFT buffers to avoid oversized
+  Windows worker-thread stack frames.
+
+## Kept
+- Direct Equalizer APO x64 microphone mixing; no virtual cables.
+- Select Range and Scratch & Freeze waveform modes, reverse/fast scrubbing.
+- Experimental DLL/controller/pipe/config remain separate from stable v0.9.0.
+
+## Known limitations
+- Consonants and noisy clips can still sound artificial.
+- Dragging motion still uses the previous WSOLA-inspired segment engine.
+- Compatible OGG/Opus codec may be needed on Windows.
+- No Windows audio-hardware validation has been performed here.
+
+
+---
+
+# Scratch Edition v0.9.4 — Locked-Loop Freeze (Experimental)
+
+## Fixed
+- Eliminated repeated stationary position searches/re-anchoring that sounded
+  like the held snippet was jumping one frame backward and forward.
+- Stationary hold chooses one phase-matched forward-reading loop and keeps it.
+- Short seam blend reduces boundary clicks without continuously blending
+  different overlapping grains, preserving a clearer central sound.
+- Corrected overlap accounting so the locked loop does not shift fundamental
+  pitch (220 Hz stays ~220 Hz; +12 st ~440 Hz; -12 st ~110 Hz).
+- Added hold→move→new hold regression coverage.
+
+## Preserved
+- Pitch and Auto Sweep still change scratch pitch live, even while holding.
+- Mouse drag speed/direction do not automatically retune playback.
+- Normal playback, Select Range, VST mic routing, optional monitor, controller
+  UI and configuration behave as in v0.9.3.
+- Stable GitHub v0.9.0 unchanged.
+
+## Known limitations
+- Audible repetition is inherent to a time-frozen segment, especially for
+  transient-heavy speech/noise; perceptual quality needs Windows testing.
+- Native OGG/Opus decoding is still not bundled.
+
+
+---
+
+# Scratch Edition v0.9.3 (Experimental)
+
+## Fixed
+- Pitch slider no longer gets ignored during Scratch & Freeze. Manual pitch
+  and per-pad Auto Sweep apply live to scrubbed and held audio.
+- Mouse speed and direction stay independent from pitch setting.
+- Replaced continuously overlapped, phasey two-grain rendering with mostly
+  direct single-segment playback and short, correlation-matched seam crossfades.
+- Smooth pitch steps while scratching; entry blend uses selected pitch.
+- Scratch Edition pipe upgraded from v2 to v3 for controller/VST isolation.
+
+## Preserved
+- Stable v0.9.0 remains unchanged.
+- Existing pad hotkeys, samples, selectable waveform, monitor output, and
+  experiment-specific configuration are retained.
+
+## Known limitations
+- Granular freezing is not lossless and can repeat transients unnaturally.
+- Windows host and mic playback remain unverified in this build environment.
+
+
+---
+
+# Scratch Edition v0.9.2 (Experimental)
+
+## Corrected
+- Scratch changes playback direction and effective speed but **not pitch**.
+- Eliminated the unintended 0.65x speed used when the mouse was motionless.
+- Switched from two 58ms triangular grains with variable input read rate to
+  96ms normalized, native-speed grains with overlap-add and waveform alignment.
+- Enter/exit transitions now crossfade between actual scratch and normal audio
+  instead of repeating a constant last sample during the release fade.
+- New Scratch pipe instance prevents old v0.9.1 and new v0.9.2 mismatches.
+
+## Preserved
+- Scratch Edition remains separate from v0.9.0 stable.
+- Existing pads, hotkeys, waveform Select Range, Auto Sweep, Diagnostics,
+  local monitoring, pitch/volume sliders, and theme controls remain.
+
+## Known limitations
+- Strong reverse/fast mouse movements and audio transients can still produce
+  grains or audible seams; held freezes intentionally repeat a segment.
+- No real Windows/Equalizer APO test completed in the build environment.
+- Ogg/Opus native codec support still absent.
+
+
+---
+
+# Scratch Edition v0.9.1 — Experimental
+
+- Forked the controller/VST from the uploaded v0.9.0 release without changing it.
+- Isolated VST unique ID, IPC named pipe, controller executable/instance,
+  configuration file and window class from the stable edition.
+- Added Select Range and Scratch & Freeze waveform modes.
+- Scratch controls pitch, speed and direction via mouse movement.
+- Holding the waveform motionless performs continuous two-grain audio freeze,
+  rather than going silent; release crossfades back to ordinary playback.
+- Scratching takes over an existing pad voice to avoid unmodified doubling.
+- Bold, centered 16px Speed/Depth numeric fields.
+- Existing waveform range, local monitor, live pitch, hotkeys and dark mode kept.
+
+Note: experimental audio quality/latency may require tuning on Windows.
