@@ -201,7 +201,7 @@
 #define MONVOL_W g_monVolW
 #define MONVOL_H g_monVolH
 #define PROTOCOL_VERSION 3u
-#define BUILD_VERSION 90600u
+#define BUILD_VERSION 90700u
 #define MAX_DECODE_WORKERS 2
 #define PIPE_AUDIO_IDLE 0x00000001u
 #define PAD_EMPTY 0
@@ -246,7 +246,7 @@ typedef struct { WL_U32 magic,frames,channels,flags; } PipeAudio;
 #define M_REQ   0x51525341u
 #define M_AUDIO 0x44525341u
 #define M_ACK   0x4b435341u
-static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','5',0 };
+static const WL_WCHAR PIPE_NAME[]={ '\\','\\','.','\\','p','i','p','e','\\','A','P','O','S','o','u','n','d','b','o','a','r','d','S','c','r','a','t','c','h','_','v','6',0 };
 
 static WL_API g_api;
 static WL_HWND g_main=0,g_tabSoundButton=0,g_tabDiagButton=0,g_padButtons[PAD_COUNT],g_selectedText=0,g_statusText=0,g_nameEdit=0,g_applyNameButton=0,g_monitorButton=0,g_fileInfoText=0,g_monitorDeviceCombo=0,g_monitorVolumeText=0;
@@ -1194,7 +1194,7 @@ static int add_voice(Client*c,int pad){Sample*s=0;float a=0,b=1;spin_lock();s=g_
  if(vv->scratch){double pos=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)s->frames;
    vv->pos=pos;vv->start=0;vv->end=(double)s->frames;
    scratch_stretch_init(&vv->scrub,pos,s->sampleRate,c->sampleRate);
-   vv->scratchAttack=(WL_I32)((c->sampleRate?c->sampleRate:48000)/100);
+   vv->scratchAttack=(WL_I32)((c->sampleRate?c->sampleRate:48000)/30);
  }
  playing_inc(pad);return 1;}
 static void sync_triggers(Client*c){WL_I64 stop=__atomic_load_n(&g_stopSerial,__ATOMIC_ACQUIRE);if(stop!=c->seenStop){for(int v=0;v<MAX_VOICES;v++)deactivate_voice(c,v);c->seenStop=stop;}for(int i=0;i<PAD_COUNT;i++){WL_I64 pst=__atomic_load_n(&g_padStopSerial[i],__ATOMIC_ACQUIRE);if(pst!=c->seenPadStop[i]){for(int v=0;v<MAX_VOICES;v++)if(c->voices[v].active&&c->voices[v].pad==i)deactivate_voice(c,v);c->seenPadStop[i]=pst;}WL_I64 now=__atomic_load_n(&g_triggerSerial[i],__ATOMIC_ACQUIRE),delta=now-c->seen[i];if(delta>8){__atomic_add_fetch(&g_droppedTriggers,(WL_U32)(delta-8),__ATOMIC_RELAXED);delta=8;}while(delta-->0)add_voice(c,i);c->seen[i]=now;}}
@@ -1208,6 +1208,10 @@ static float scratch_granular(Voice*v,WL_U32 hostRate,WL_U64 tick,int releasing)
     event, drives continuous spectral tracking. No fake velocity timeout. */
  (void)tick;(void)releasing;
  double speed=0.0;
+ WL_U64 lastMoved=__atomic_load_n(&g_scratchMoveMs,__ATOMIC_ACQUIRE);
+ WL_U64 now=sweep_clock();
+ if(now>=lastMoved&&now-lastMoved<55ull)
+  speed=(double)__atomic_load_n(&g_scratchRateMilli,__ATOMIC_ACQUIRE)*.001;
  double pointer=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)s->frames;
  /* Do not invent any playback velocity after the hand stops. */
  double base=(double)s->sampleRate/(double)(hostRate?hostRate:48000);
@@ -1236,7 +1240,7 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
     double anchor=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)v->sample->frames;
     v->scratchDryPos=v->pos;v->scratch=1;v->pos=anchor;v->start=0;v->end=(double)v->sample->frames;
     scratch_stretch_init(&v->scrub,anchor,v->sample->sampleRate,c->sampleRate);
-    v->scratchAttack=(WL_I32)((c->sampleRate?c->sampleRate:48000)/100);v->scratchRelease=0;
+    v->scratchAttack=(WL_I32)((c->sampleRate?c->sampleRate:48000)/30);v->scratchRelease=0;
    }
   }
  }
@@ -1259,8 +1263,8 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
    if(holding){
     q=scratch_granular(vv,c->sampleRate,blockTick,0);
     if(vv->scratchAttack>0){
-     /* Short entry crossfade prevents an instantaneous seek click. */
-     int total=(int)((c->sampleRate?c->sampleRate:48000)/100);if(total<1)total=1;
+     /* Longer entry crossfade covers FFT overlap-add warm-up, preventing a volume hole. */
+     int total=(int)((c->sampleRate?c->sampleRate:48000)/30);if(total<1)total=1;
      double mix=1.0-(double)vv->scratchAttack/(double)total;
      float dry=cubic_array_sample(vv->sample->mono,vv->sample->frames,vv->scratchDryPos);
      vv->scratchDryPos+=vv->targetStep;
@@ -1272,7 +1276,7 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
      /* Release preserves the old grain engine for a short CROSSFADE into
         normal playback; a constant sample held for 12ms caused clicks. */
      vv->scratch=0;vv->scratchAttack=0;
-     vv->scratchRelease=(WL_I32)((c->sampleRate?c->sampleRate:48000)/70);
+     vv->scratchRelease=(WL_I32)((c->sampleRate?c->sampleRate:48000)/32);
      if(vv->scratchRelease<1)vv->scratchRelease=1;
      vv->pos=(double)__atomic_load_n(&g_scratchPosPpm,__ATOMIC_ACQUIRE)*0.000001*(double)vv->sample->frames;
      vv->start=0;vv->end=(double)vv->sample->frames;
@@ -1283,7 +1287,7 @@ static int generate_audio(Client*c,float*out,WL_U32 frames){
     vv->step+=(vv->targetStep-vv->step)*smooth;
     q=cubic_sample(vv->sample->mono,vv->sample->frames,vv->start,vv->end,pos);
     if(vv->scratchRelease>0){
-     int total=(int)((c->sampleRate?c->sampleRate:48000)/70);if(total<1)total=1;
+     int total=(int)((c->sampleRate?c->sampleRate:48000)/32);if(total<1)total=1;
      double mix=1.0-(double)vv->scratchRelease/(double)total;
      if(mix<0)mix=0;if(mix>1)mix=1;
      float previous=scratch_granular(vv,c->sampleRate,blockTick,1);

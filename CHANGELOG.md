@@ -1,29 +1,20 @@
-# APO Soundboard — Scratch Edition v0.9.6
+# Experimental Scratch Edition changelog
 
-## Experimental: Unified Spectral Scrubbing
+## v0.9.7 — Higher-fidelity hybrid scratch (experimental)
 
-- Replaced the moving-grain/WSOLA renderer with continuous spectral-peak
-  tracking and additive resynthesis. No 78ms recorded-frame hopping or
-  11ms moving-fragment seam blending remains.
-- Re-analysis occurs only when the waveform pointer position changes;
-  holding the cursor does not trigger new source segments.
-- Phase continuity retained while spectral content follows forward or
-  reverse cursor movement. The original pitch, user Pitch control and
-  Auto Sweep behavior are preserved independently of cursor speed.
-- Removed an overlapping board-mix soft saturator; introduced a single
-  dynamic linear VST output gain limiter for mic + soundboard and separate
-  monitor peak protection before converting to PCM16.
-- Diagnostics now label pre-limiter over-level input correctly; these
-  counters do not measure clipping after the limiter.
-- Removed mouse timestamp-based 90ms freeze switching.
-- Experimental v5 pipe isolates this engine from previous Scratch releases.
-- Added offline regression for hold, forward, reverse, live pitch, large
-  motion jumps, finite samples and peaks.
+- **Full-spectrum phase-vocoder scratch**: replaces the 192-slot / 112-tracked-peak oscillator engine from v0.9.6 with complex FFT overlap-add synthesis using all 1025 nonredundant bins of a 2048-point real spectrum. Source PCM noise, timbre and transient detail are no longer discarded by peak filtering.
+- **Independent live Pitch preserved**: pitch shifts the assembled spectrum through cubic time-domain resampling, rather than remapping sparse spectral bins. Auto Sweep continues to control Pitch.
+- **Decoded PCM at natural speed**: an adaptive source read fades in near steady ±1× cursor movement when Pitch is neutral; special slowed/fast/frozen regions remain fully resynthesized.
+- **Transitions and timing**: audio-clocked source-motion estimate informed by recent GUI velocity; controlled crossfades into/out of Scratch; waveform scratch selection, left/right direction and indefinite hold unchanged.
+- **Separate instance**: pipe suffix `Scratch_v6`, v0.9.7 paired controller and DLL, existing experimental config compatibility. No stable v0.9.0 changes.
+- **Quality regression**: added identity fidelity, 44.1k→48k conversion, broadband-noise, live Pitch, motion/reverse, and held cursor tests; offline real voice decoded and used in testing.
 
-### Limitations
+### Known limitations
 
-A spectral oscillator bank smooths timbral changes but cannot exactly
-reproduce all transients and noisy vocal components. This is an experimental
-quality revision, not proof of perfect real-time time stretching. Windows
-Equalizer APO listening and monitoring tests remain necessary. Stable
-v0.9.0 on GitHub was not changed.
+- Holding a single point indefinitely still needs spectral synthesis and can sound artificial on consonants or noisy audio. Perfect original quality at arbitrary speed/freeze is not physically achievable.
+- Actual Windows/Equalizer APO microphone and monitoring output was **not** runtime-tested; this is an experimental binary.
+
+## v0.9.6 — Continuous spectral motion / limiter changes
+
+- Single tracked-oscillator spectral engine for forward/reverse/hold, no old moving short-loop fragments.
+- Headroom and monitoring/VST clipping protection.
