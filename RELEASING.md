@@ -45,7 +45,7 @@ OGG/Opus support still depends on Windows Media Foundation codecs. Native Ogg Vo
 
 ## Published Scratch Edition channel
 
-Eight Scratch Edition releases ([v0.9.1–v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/SCRATCH_RELEASES.md)) are published with matching Windows x64 ZIP attachments. Their Git tags now resolve to the correct historical Scratch source commits. The latest Scratch source is on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze), while older release source snapshots are preserved on [`experimental/scratch-release-history`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-release-history).
+Eight Scratch Edition releases ([v0.9.1–v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/SCRATCH_RELEASES.md)) are published with matching Windows x64 ZIP attachments. Their Git tags now resolve to the correct historical Scratch source commits. The latest Scratch source is on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze); all eight historical source snapshots are preserved by their corresponding release tags.
 
 - [Download Scratch Edition v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8)
 - [Download lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)
