@@ -1,77 +1,46 @@
-# Architecture
+# Scratch Edition architecture
 
-APO Soundboard intentionally uses two Windows components:
+Scratch Edition v0.9.8 is the higher-resource alternative to [lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main). They have different DLL/controller pairs, local communication endpoints, and configuration.
 
-1. **VST DLL** - loaded by Equalizer APO in the microphone/capture processing chain. It passes the microphone through and mixes soundboard audio into that stream.
-2. **Controller EXE** - owns the pad UI, file decoding, hotkeys, waveform regions, local monitoring, configuration and diagnostics.
+## Equalizer APO integration
 
-The two communicate over a **local named pipe**. No virtual microphone/cable is required for the core microphone-routing path.
+- **VST2 DLL:** hosted in the Equalizer APO microphone chain; mixes soundboard output into incoming microphone audio.
+- **Controller EXE:** 16 pads, global hotkeys, waveform display, file decoding, diagnostics, local monitor, Scratch processing and audio controls.
+- **Communication:** local Windows named pipe. Always keep the matching controller and versioned DLL together.
+- No virtual cable is needed to inject soundboard audio into the microphone path.
 
-This split is intentional because Equalizer APO's editor/UI instance is separate from its continuously running DSP instance. Keeping user interaction and file management in the controller avoids relying on DAW-style host services that Equalizer APO does not provide.
+## Waveform controls and audio engine
 
-## Controller / VST protocol
+**Select Range** allows a user to edit the normal playback region, with blue selection shading.
 
-Current releases use **protocol v3**.
+**Scratch** uses mouse movement to traverse source audio forward or backward without automatically changing the musical pitch. At a stationary cursor, it continuously synthesizes the sound around the selected position. The separate Pitch slider and Auto Sweep modulate scratch pitch live.
 
-The VST supplies host telemetry such as:
-- sample rate
-- block size
-- ring-buffer state
-- adaptive target fill
-- underruns
-- peak/clipping data
+The high-fidelity Scratch path uses a full-spectrum 2048-point FFT overlap-add processor. When movement is suitable for near-natural-speed direct playback, it can read decoded PCM directly instead. Indefinite holds and extreme stretching are not lossless.
 
-The controller supplies generated stereo soundboard audio back to the VST. If the controller disconnects, the VST falls back to microphone-only passthrough and waits for reconnection.
+The audio engine in v0.9.8 matches v0.9.7; the later release mainly improves UI behavior.
 
-## Audio engine
+## Windows UI
 
-- Up to 32 active voices.
-- Oldest-voice stealing when the pool is full.
-- HQ cubic resampling.
-- Live per-pad volume/pitch with short smoothing.
-- Host-rate sample conversion where useful.
-- Adaptive VST buffering.
-- Real-time generation path avoids unnecessary heap allocation.
-- Idle/deep-idle paths reduce work when no pads are playing.
+- Windows-style Soundboard/Diagnostics tabs.
+- Parent-painted diagnostics panel boundaries to avoid overlapping native group-box redraw.
+- Coordinated resize and theme invalidation.
+- Distinct waveform visuals for Select Range and Scratch.
+- Bold, centered Speed/Depth numeric fields.
 
-## Auto Sweep and controller UI
+## Code and testing
 
-The v0.8.8+ controller has a per-pad triangle-wave Auto Sweep (LFO) that modulates the existing live pitch parameter. The playback engine still uses sampler-style resampling: modulating pitch also changes playback rate/duration. **There is no independent time-stretch/speed engine.**
+- `src/controller.c`: UI, audio, named-pipe communication, and monitoring.
+- `src/scratch_dsp.h`: scratch/freeze DSP.
+- `src/plugin.c`: VST2 host integration and microphone mixing.
+- `src/winlite.h`: freestanding Win32 API declarations.
+- `tests/`: offline audio fidelity, motion, freeze, pitch, and rate-conversion regressions.
 
-Auto Sweep has a cycle speed in Hz and depth in semitones. The pitch slider reflects its current position. Pad hotkeys also select the triggered pad in the controller without calling foreground activation.
+See [BUILDING.txt](BUILDING.txt), [TESTING.txt](TESTING.txt), [AUDIT.txt](AUDIT.txt) and [CHANGELOG.md](CHANGELOG.md).
 
-The UI uses Win32/GDI, including owner-drawn buttons and waveform painting; Soundboard and Diagnostics views are responsive to window size.
+## Historical source
 
-v0.9.0 adds a Light/Dark palette, with native title-bar tinting where Windows supports it. The theme is persisted independently of the soundboard settings.
+Every released source snapshot can be accessed by its published `scratch-v0.9.1` through `scratch-v0.9.8` tags. See [SCRATCH_RELEASES.md](SCRATCH_RELEASES.md); no additional history branch is needed.
 
-## Local monitoring
+## License
 
-Local monitor playback is separate from the microphone/VST mix. Monitor failure must not block or interrupt microphone audio.
-
-v0.9.0 preserves the compatibility-oriented Windows playback path from the v0.8.1/v0.8.2 line, with additional fallback handling retained. The controller attempts to avoid retaining an idle monitor source connection.
-
-## File decoding
-
-- WAV uses the built-in decoder.
-- MP3/AAC/M4A/WMA/FLAC use Windows Media Foundation.
-- OGG/OGA/Opus are accepted through Media Foundation when Windows exposes a compatible decoder.
-
-There is currently no bundled native Vorbis/Opus decoder.
-
-## Resource model
-
-- 128 MiB maximum decoded sample RAM per pad.
-- 512 MiB maximum decoded sample RAM in total.
-- Background decode/resample work is bounded.
-- Sample replacement uses deferred reclamation so data is not freed while the mixer may still reference it.
-- Win32/GDI UI; no Direct3D/OpenGL/Vulkan renderer.
-
-## Configuration
-
-The compatibility filename remains:
-
-`%LOCALAPPDATA%\APOSoundboard\config_v05.bin`
-
-The internal format is versioned separately (v11 in v0.9.0). Current builds use atomic replacement, CRC validation and `.bak` recovery so interrupted/corrupt writes can fall back to the previous known-good configuration.
-
-The Light/Dark preference is stored separately as `%LOCALAPPDATA%\APOSoundboard\config_v05.bin.theme` for compatibility with older configs.
+MIT. This project is not affiliated with Equalizer APO.
