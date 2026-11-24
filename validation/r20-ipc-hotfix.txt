@@ -1,0 +1,30 @@
+Wire ABI sizes unchanged
+Actual client handshake acceptance
+ACK matches connecting DLL build
+Client count cleaned up
+Actual client handshake acceptance
+ACK matches connecting DLL build
+Client count cleaned up
+Actual client handshake acceptance
+Client count cleaned up
+Rejected build recorded
+Actual client handshake acceptance
+Client count cleaned up
+Rejected protocol recorded
+Actual client handshake acceptance
+Client count cleaned up
+Actual client handshake acceptance
+Client count cleaned up
+Actual client handshake acceptance
+Client count cleaned up
+Actual client handshake acceptance
+ACK matches connecting DLL build
+Client count cleaned up
+Successful handshake clears rejection and disconnects
+Last accepted DLL build remains available after disconnect
+Invalid peer cannot disrupt valid peer
+Last valid peer disconnect clears ready status
+Actual client handshake acceptance
+Client count cleaned up
+Failed ACK never counts as accepted
+PASS R20 IPC hotfix

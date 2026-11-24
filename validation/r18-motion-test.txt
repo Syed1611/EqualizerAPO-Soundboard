@@ -1,0 +1,9 @@
+Voice created
+Click without motion remains silent
+Two real horizontal events at the same tick cannot clear motion
+No gate drop over tested irregular slow drag and reversal
+Duplicate coordinates do not extend activity
+True stop reaches zero after grace and fade
+Motion resumes full gain
+Release restores playback state
+PASS R18 actual cursor-update path with simulated irregular clock

@@ -1,0 +1,64 @@
+tone 65.0 pitch 0.5 distance 4.161 -> 3.889 ms; outside 0.0002 -> 0.0000; amplitude 0.2019 -> 0.2020
+Hold tone amplitude preserved against baseline
+tone 65.0 pitch 1.0 distance 5.117 -> 4.201 ms; outside 0.0392 -> 0.0005; amplitude 0.2000 -> 0.2001
+Hold tone amplitude preserved against baseline
+tone 65.0 pitch 2.0 distance 8.156 -> 5.240 ms; outside 0.2263 -> 0.0465; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 82.4 pitch 0.5 distance 3.663 -> 3.192 ms; outside 0.0000 -> 0.0000; amplitude 0.2008 -> 0.1996
+Hold tone amplitude preserved against baseline
+tone 82.4 pitch 1.0 distance 4.088 -> 3.392 ms; outside 0.0076 -> 0.0000; amplitude 0.1991 -> 0.1993
+Hold tone amplitude preserved against baseline
+tone 82.4 pitch 2.0 distance 7.954 -> 4.708 ms; outside 0.2146 -> 0.0232; amplitude 0.2006 -> 0.2006
+Hold tone amplitude preserved against baseline
+tone 110.0 pitch 0.5 distance 2.893 -> 2.422 ms; outside 0.0000 -> 0.0000; amplitude 0.2001 -> 0.2001
+Hold tone amplitude preserved against baseline
+tone 110.0 pitch 1.0 distance 4.222 -> 2.829 ms; outside 0.0098 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 110.0 pitch 2.0 distance 7.806 -> 4.296 ms; outside 0.2053 -> 0.0107; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 140.0 pitch 0.5 distance 2.472 -> 1.963 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 140.0 pitch 1.0 distance 4.123 -> 2.518 ms; outside 0.0063 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 140.0 pitch 2.0 distance 7.753 -> 4.122 ms; outside 0.2021 -> 0.0063; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 220.0 pitch 0.5 distance 2.185 -> 1.916 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 220.0 pitch 1.0 distance 3.903 -> 2.240 ms; outside 0.0017 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 220.0 pitch 2.0 distance 7.603 -> 3.903 ms; outside 0.1932 -> 0.0017; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 440.0 pitch 0.5 distance 2.595 -> 1.607 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 440.0 pitch 1.0 distance 4.199 -> 2.595 ms; outside 0.0087 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 440.0 pitch 2.0 distance 7.500 -> 4.199 ms; outside 0.1867 -> 0.0087; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 880.0 pitch 0.5 distance 2.467 -> 1.614 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 880.0 pitch 1.0 distance 3.750 -> 2.467 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 880.0 pitch 2.0 distance 7.500 -> 3.750 ms; outside 0.1867 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+Polyphonic stereo distance 5.583 -> 4.791 ms, outside 0.0643 -> 0.0061, RMS 0.0760 -> 0.0760
+Polyphonic RMS stays within 15% of baseline
+Speech fixture available
+Speech fixture loaded
+speech position 1: distance 10.006 -> 9.690 ms outside 0.3243 -> 0.2286 RMS 0.0199 -> 0.0184
+speech position 2: distance 9.885 -> 5.925 ms outside 0.3208 -> 0.0395 RMS 0.1613 -> 0.1695
+speech position 3: distance 7.627 -> 6.819 ms outside 0.1789 -> 0.1214 RMS 0.0329 -> 0.0352
+speech position 4: distance 9.823 -> 9.150 ms outside 0.3121 -> 0.1923 RMS 0.1806 -> 0.1841
+speech position 5: distance 7.199 -> 7.381 ms outside 0.1684 -> 0.1194 RMS 0.0460 -> 0.0481
+speech position 6: distance 6.253 -> 5.764 ms outside 0.1107 -> 0.0571 RMS 0.0256 -> 0.0257
+speech position 7: distance 7.563 -> 5.695 ms outside 0.1958 -> 0.0652 RMS 0.0490 -> 0.0516
+speech position 8: distance 3.750 -> 1.875 ms outside 0.0000 -> 0.0000 RMS 0.0241 -> 0.0024
+speech position 9: distance 8.128 -> 1.875 ms outside 0.2504 -> 0.0000 RMS 0.0057 -> 0.0000
+speech position 10: distance 8.899 -> 9.607 ms outside 0.2498 -> 0.2481 RMS 0.0625 -> 0.0618
+speech position 11: distance 3.750 -> 1.875 ms outside 0.0000 -> 0.0000 RMS 0.0000 -> 0.0000
+speech position 12: distance 9.344 -> 8.050 ms outside 0.2588 -> 0.1553 RMS 0.0853 -> 0.0859
+Tone averages: distance 4.957 -> 3.193 ms; outside 0.0709 -> 0.0046
+Speech averages: distance 7.686 -> 6.142 ms; outside 0.1975 -> 0.1022
+Weighted source footprint improves on aggregate tone and speech fixtures
+Moving speech output bit-identical to R15 across five rates
+Motion-hold-motion maximum adjacent sample delta 0.117698
+Stationary/moving hop changes at grain boundaries

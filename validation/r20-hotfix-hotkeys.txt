@@ -1,0 +1,15 @@
+Failed Windows registration is recorded
+Stop registration failure is recorded
+No retries during capture
+No retries during suspension
+Rejected registrations recover after conflict clears
+Successful registrations not churned
+Page 2 global hotkey reaches actual playback serial
+Stale key ignored
+Wrong modifiers ignored
+Capture cannot trigger playback
+Muted playback ignored
+Disconnected playback not queued unexpectedly
+Missing audio ignored
+Next hotkey works after reconnect
+Stop hotkey reaches playback stop serial

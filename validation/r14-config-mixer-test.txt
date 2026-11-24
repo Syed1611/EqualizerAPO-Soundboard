@@ -1,0 +1,33 @@
+Stop All cancels earlier pending trigger
+Trigger after Stop All survives
+Default mono playback
+Stereo playback preserves channels
+Optional normalization
+Overlap
+Restart
+Toggle
+Loop repeats selection
+Loop toggle off
+Hold playback repeats while held
+Hold release stop
+Effect storage allocated only on active pad
+Stop frees effect tank
+Stereo PCM decode
+Reject overflowing WAV chunk size
+Stale loader cannot replace current assignment
+HQ resampler output length
+HQ resampler suppresses downsampling alias
+R9 enhanced stereo scrub retains channel separation
+R9 mixer uses enhanced R2 by default
+Live rate change resets scrub and updates step
+R8 legacy preference migrates to Enhanced R2
+Obsolete mode cannot change engine
+Write extended configuration
+R6 settings round trip
+Remembered close; obsolete scrub setting ignored
+Approved high-volume settings round trip across both pages
+Six font sizes round trip through configuration
+Reject corrupt extension for backup recovery
+R5 config loads with HQ migration default
+Older config restores Ask and HQ defaults
+PASS R6/R7 controller

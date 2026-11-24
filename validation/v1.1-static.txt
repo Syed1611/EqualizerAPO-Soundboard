@@ -1,0 +1,1 @@
+Windows x64 controller and DLL compiled; static version/manifest/host launch/44-test inventory assertions passed. Native Windows GUI/runtime not executed.

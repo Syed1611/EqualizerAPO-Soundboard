@@ -1,15 +1,1 @@
-Scratch Edition v1.0.0 — build and audit report
-
-- Baseline: exact user-uploaded v0.9.10 archive, not older GitHub files.
-- SHA-256 of src/scratch_dsp.h matches uploaded v0.9.10 (no DSP alteration).
-- Windows controller/DLL: clang -target x86_64-pc-windows-msvc -O3; lld-link.
-- Both binaries match BUILD_VERSION 100000 and private Scratch_v10 pipe; protocol v3.
-- Controller PE32+ has native RT_GROUP_ICON ID 101 with 7 sizes and EXE VERSIONINFO.
-- VST PE32+ has DLL VERSIONINFO and exports VSTPluginMain.
-- 10 test programs finished successfully, with optional external voice test fixture skipped in test_scratch.
-- Controller and plugin clang static analysis produced no warnings.
-- Monitor WinMM waveOutWrite failure is handled by disabling local monitoring and displaying device-specific status (Windows runtime check pending).
-- UI mode switch immediately refreshes selected pad and waveform.
-- No app logo in the DLL (VST DLL icon has no taskbar/window); DLL has version metadata.
-- Maintainer confirmed normal v1.0.0 operation in their Windows environment on 2026-10-23. Full device/driver matrix, Defender scan, hot-unplug failure recovery and DPI variations remain unverified.
-- Scratch source branch was updated to v1.0.0. The lightweight main branch and previously published releases remain untouched; final GitHub Release publication is handled separately by the maintainer.
+v1.1 Windows x64 controller and VST cross-compiled. Static version, manifest and export checks passed. See VALIDATION.md for offline results and limitations. Native Windows execution has not been independently verified.

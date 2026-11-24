@@ -1,0 +1,5 @@
+PASS neutral pitch speed 0: 96000 samples identical
+PASS neutral pitch speed 0.25: 96000 samples identical
+PASS neutral pitch speed -0.25: 96000 samples identical
+Wanted 8 kHz -12.239 -> -12.239 dBFS; alias 16 kHz -12.239 -> -88.925 dBFS; reduction 76.686 dB
+PASS finite output at non-neutral pitch, forward/reverse

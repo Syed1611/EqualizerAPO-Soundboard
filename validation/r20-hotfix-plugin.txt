@@ -1,0 +1,8 @@
+Classic limiter and stereo ring consumption
+Optional block-peak limiter anticipates peak
+Reset contention preserves microphone and does not consume ring
+Ring reset completes consistently
+Rate change increments ring epoch
+Old-rate buffered audio never consumed
+Adaptive buffering scales to sample rate
+PASS R6/R7 plugin

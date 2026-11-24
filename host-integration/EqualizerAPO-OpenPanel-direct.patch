@@ -1,0 +1,21 @@
+--- a/Editor/guis/VSTPluginFilterGUI.cpp
++++ b/Editor/guis/VSTPluginFilterGUI.cpp
+@@ -118,6 +118,18 @@
+ 
+ 	if (effect != NULL)
+ 	{
++		// Scratch Edition uses its native controller instead of a VST widget.
++		// APSX is its exact VST2 uniqueID; the name check avoids other VSTs.
++		const int scratchId = ('A' << 24) | ('P' << 16) | ('S' << 8) | 'X';
++		if (effect->uniqueID() == scratchId &&
++			effect->getName() == L"APO Soundboard Scratch")
++		{
++			effect->writeToEffect(chunkData, paramMap);
++			short width = 0, height = 0;
++			effect->startEditing(NULL, &width, &height);
++			effect->stopEditing();
++			return;
++		}
+ 		effect->writeToEffect(chunkData, paramMap);
+ 		VSTPluginFilterGUIDialog dialog(this, effect, autoApplyDialog);
+ 		connect(dialog.getApplyButton(), SIGNAL(pressed()), SLOT(applyDialog()));

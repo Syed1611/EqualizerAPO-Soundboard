@@ -1,0 +1,9 @@
+Maximum sum of microphone and monitor difference including effect tails: 0.000000000
+Selecting/editing another pad cannot change playback or effect tails
+Selecting pad changes linked display, not global gain
+Two linked pads have equal independent monitor and microphone gains
+Unapproved edit caps only selected pad
+Linked volume edit changes only selected pad
+Unlink restores independent monitor master
+Pad names and hotkeys share 10 pt default
+Valid older font preference loads

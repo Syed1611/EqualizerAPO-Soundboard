@@ -1,0 +1,12 @@
+PASS rate=48000, half-semitones=0, takeover=0: neutral prefix identical; finite 60000 float samples
+PASS rate=48000, half-semitones=0, takeover=1: neutral prefix identical; finite 60000 float samples
+PASS rate=48000, half-semitones=9, takeover=0: finite 60000 float samples
+PASS rate=48000, half-semitones=9, takeover=1: finite 60000 float samples
+PASS rate=48000, half-semitones=-12, takeover=0: finite 60000 float samples
+PASS rate=48000, half-semitones=-12, takeover=1: finite 60000 float samples
+PASS rate=44100, half-semitones=0, takeover=0: neutral prefix identical; finite 60000 float samples
+PASS rate=44100, half-semitones=0, takeover=1: neutral prefix identical; finite 60000 float samples
+PASS rate=44100, half-semitones=9, takeover=0: finite 60000 float samples
+PASS rate=44100, half-semitones=9, takeover=1: finite 60000 float samples
+PASS rate=44100, half-semitones=-12, takeover=0: finite 60000 float samples
+PASS rate=44100, half-semitones=-12, takeover=1: finite 60000 float samples

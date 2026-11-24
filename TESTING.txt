@@ -1,16 +1,18 @@
-Scratch Edition v1.0.0 — Windows acceptance checklist
+v1.1 Windows acceptance checklist
 
-1. Run the controller, inspect the title bar, taskbar, Alt+Tab and Explorer: the cyan waveform/red vertical line icon should appear at all sizes.
-2. Right-click EXE and VST DLL > Properties > Details: FileVersion 1.0.0.0.
-3. In Equalizer APO capture/microphone chain, load `APOSoundboardScratch_v1.0.0.dll`, open its matching controller and confirm it connects with no protocol/build mismatch.
-4. Play multiple pads; in Scrub, left-click a playing pad at different waveform positions, drag, hold, release to pause, and resume with Play and Space. Other pads must continue unaffected.
-5. Repeat 10+ fast drag-release-drag cycles. No persistent buzz/skrr, clicks or jumps; verify Pitch and Auto Sweep independently.
-6. Switch Soundboard/Diagnostics, Select Range/Scrub, Light/Dark and resize repeatedly. Look for blank controls, stale text, borders, flashing and misalignment.
-7. Verify Space does nothing outside the Scrub waveform mode, while editing labels/values or during hotkey capture.
-8. Select local Monitor. Unplug/disconnect the audio output while listening; monitoring must fail cleanly, report device error and not stop the mic VST stream. Reconnect, refresh and manually reenable. This test must be done cautiously, at safe volume.
-9. Verify peak and host-output clipped frames are distinct from VST ring underruns and monitor underruns/overruns/errors in Diagnostics.
-10. Check config migration from previous Scratch versions, pad reload/remove, missing files, corrupted config backup and graceful shutdown; monitor RAM/handles/GDI counts for leaks.
-11. Check 44.1/48/96 kHz hosts, soundpad hotkeys when unfocused, controller close/restart and DPI scaling on a second display.
-12. Run Defender or comparable malware scan on the downloaded release archive on Windows.
+Check grey Silent / blue Continuous track, control alignment and large-font fallback. Test neutral and shifted pitch, live changes, octave-up on real recordings and CPU load.
 
-Offline build checks: all 10 test programs completed; test_scratch skipped an optional external raw voice fixture, documented in README.md. No live host or driver integration was available **during the cross-build**. On 2026-10-23, the maintainer separately confirmed v1.0.0 worked on their Windows setup. This general acceptance report should not be treated as confirmation that every numbered edge-case test above was completed.
+Manual Windows acceptance checklist (not executed here):
+1. Exit previous controller fully, select matching v1.1 DLL, verify v1.1 title and connection. Back up settings.
+2. Compare original R2 OpenPanel and R9 against v1.1 using the same real voice/music, neutral pitch, slow/fast movement, prolonged hold, direction changes and release. Check 44.1/48/96 kHz and native stereo. Report perceptual regressions.
+3. Open Tools > Appearance > Font sizes (live); verify default 11/10/10/12/14/10, each group 8–20, restore defaults, restart to confirm persistence. Inspect light/dark and DPI scales. Very large fonts may require a larger window.
+4. Confirm output percentage remains stable during playback and holds; verify blue connected range/scrub buttons and monitor selected display, full-name tooltip and native list selection (mouse and keyboard).
+5. Inspect close and high-volume dialogs in both themes, keyboard actions, remembered choices and fades, reduced-motion setting. Verify no repeated warning after approval, retry after denial, linked controls and independent output/monitor paths.
+6. Play pad 1 with echo/reverb, select pad 2 with different volume/pitch/effects, change pad 2 and confirm pad 1 and its effect tail remain unchanged in both output and monitor. Test linked and unlinked operation, then simultaneous playback.
+7. Check tray, hotkeys, Stop All, playback modes, effect presets, and limiter. Stock host may still flash.
+8. Compare R16 and v1.1 on identical cursor locations, especially syllable and silence boundaries, bass-heavy sounds, stationary holds and resuming forward/reverse motion.
+Offline tests: BUILDING.txt and validation/test-results.txt.
+
+9. Verify new Silent/Continuous toggle placement and icon contrast, Select Range disables toggle, settings persist. Verify zero dry output on stationary hold in Silent, movement resumes, release pauses at cursor. Natural effect tails may remain. Try very slow mouse movement (events spaced beyond the 55–90 ms deadline can still be classified as stationary).
+
+Verify that release pauses at cursor and Play/Space resumes, and that ordinary pad playback remains stereo. Compare with the original R2 archive at unity gain with effects and normalization disabled.

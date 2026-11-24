@@ -1,0 +1,5 @@
+Active mono render maximum difference vs directly included original R2 = 0
+Original R2 core invoked without numerical differences
+Worst-case movement deadline is capped at 90 ms
+Stationary gate reaches exact zero within fade
+PASS R19 exact core and bounded stop

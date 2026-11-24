@@ -1,0 +1,113 @@
+tone 65.0 pitch 0.5 distance 3.889 -> 3.889 ms; outside 0.0000 -> 0.0000; amplitude 0.2020 -> 0.2020
+Hold tone amplitude preserved against baseline
+tone 65.0 pitch 1.0 distance 4.201 -> 4.201 ms; outside 0.0005 -> 0.0005; amplitude 0.2001 -> 0.2001
+Hold tone amplitude preserved against baseline
+tone 65.0 pitch 2.0 distance 5.240 -> 5.240 ms; outside 0.0465 -> 0.0465; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 82.4 pitch 0.5 distance 3.192 -> 3.192 ms; outside 0.0000 -> 0.0000; amplitude 0.1996 -> 0.1996
+Hold tone amplitude preserved against baseline
+tone 82.4 pitch 1.0 distance 3.392 -> 3.392 ms; outside 0.0000 -> 0.0000; amplitude 0.1993 -> 0.1993
+Hold tone amplitude preserved against baseline
+tone 82.4 pitch 2.0 distance 4.708 -> 4.708 ms; outside 0.0232 -> 0.0232; amplitude 0.2006 -> 0.2006
+Hold tone amplitude preserved against baseline
+tone 110.0 pitch 0.5 distance 2.422 -> 2.422 ms; outside 0.0000 -> 0.0000; amplitude 0.2001 -> 0.2001
+Hold tone amplitude preserved against baseline
+tone 110.0 pitch 1.0 distance 2.829 -> 2.829 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 110.0 pitch 2.0 distance 4.296 -> 4.296 ms; outside 0.0107 -> 0.0107; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 140.0 pitch 0.5 distance 1.963 -> 1.963 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 140.0 pitch 1.0 distance 2.518 -> 2.518 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 140.0 pitch 2.0 distance 4.122 -> 4.122 ms; outside 0.0063 -> 0.0063; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 220.0 pitch 0.5 distance 1.916 -> 1.916 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 220.0 pitch 1.0 distance 2.240 -> 2.240 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 220.0 pitch 2.0 distance 3.903 -> 3.903 ms; outside 0.0017 -> 0.0017; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 440.0 pitch 0.5 distance 1.607 -> 1.607 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 440.0 pitch 1.0 distance 2.595 -> 2.595 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 440.0 pitch 2.0 distance 4.199 -> 4.199 ms; outside 0.0087 -> 0.0087; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 880.0 pitch 0.5 distance 1.614 -> 1.614 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 880.0 pitch 1.0 distance 2.467 -> 2.467 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+tone 880.0 pitch 2.0 distance 3.750 -> 3.750 ms; outside 0.0000 -> 0.0000; amplitude 0.2000 -> 0.2000
+Hold tone amplitude preserved against baseline
+Polyphonic stereo distance 4.791 -> 4.791 ms, outside 0.0061 -> 0.0061, RMS 0.0760 -> 0.0760
+Polyphonic RMS stays within 15% of baseline
+Speech fixture available
+Speech fixture loaded
+speech position 1: distance 9.690 -> 9.690 ms outside 0.2286 -> 0.2286 RMS 0.0184 -> 0.0184
+speech position 2: distance 5.925 -> 5.925 ms outside 0.0395 -> 0.0395 RMS 0.1695 -> 0.1695
+speech position 3: distance 6.819 -> 6.819 ms outside 0.1214 -> 0.1214 RMS 0.0352 -> 0.0352
+speech position 4: distance 9.150 -> 9.150 ms outside 0.1923 -> 0.1923 RMS 0.1841 -> 0.1841
+speech position 5: distance 7.381 -> 7.381 ms outside 0.1194 -> 0.1194 RMS 0.0481 -> 0.0481
+speech position 6: distance 5.764 -> 5.764 ms outside 0.0571 -> 0.0571 RMS 0.0257 -> 0.0257
+speech position 7: distance 5.695 -> 5.695 ms outside 0.0652 -> 0.0652 RMS 0.0516 -> 0.0516
+speech position 8: distance 1.875 -> 1.875 ms outside 0.0000 -> 0.0000 RMS 0.0024 -> 0.0024
+speech position 9: distance 1.875 -> 1.875 ms outside 0.0000 -> 0.0000 RMS 0.0000 -> 0.0000
+speech position 10: distance 9.607 -> 9.607 ms outside 0.2481 -> 0.2481 RMS 0.0618 -> 0.0618
+speech position 11: distance 1.875 -> 1.875 ms outside 0.0000 -> 0.0000 RMS 0.0000 -> 0.0000
+speech position 12: distance 8.050 -> 8.050 ms outside 0.1553 -> 0.1553 RMS 0.0859 -> 0.0859
+Tone averages: distance 3.193 -> 3.193 ms; outside 0.0046 -> 0.0046
+Speech averages: distance 6.142 -> 6.142 ms; outside 0.1022 -> 0.1022
+Slow bass 65.0 speed 0.025 pitch 0.5 amplitude 0.2020 -> 0.2021
+Slow tone amplitude remains within tolerance
+Slow bass 65.0 speed 0.025 pitch 1.0 amplitude 0.1999 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 65.0 speed 0.025 pitch 2.0 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Slow bass 65.0 speed 0.080 pitch 0.5 amplitude 0.2020 -> 0.2020
+Slow tone amplitude remains within tolerance
+Slow bass 65.0 speed 0.080 pitch 1.0 amplitude 0.1989 -> 0.1996
+Slow tone amplitude remains within tolerance
+Slow bass 65.0 speed 0.080 pitch 2.0 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Slow bass 82.4 speed 0.025 pitch 0.5 amplitude 0.2011 -> 0.2006
+Slow tone amplitude remains within tolerance
+Slow bass 82.4 speed 0.025 pitch 1.0 amplitude 0.1993 -> 0.1993
+Slow tone amplitude remains within tolerance
+Slow bass 82.4 speed 0.025 pitch 2.0 amplitude 0.2005 -> 0.2005
+Slow tone amplitude remains within tolerance
+Slow bass 82.4 speed 0.080 pitch 0.5 amplitude 0.2010 -> 0.2011
+Slow tone amplitude remains within tolerance
+Slow bass 82.4 speed 0.080 pitch 1.0 amplitude 0.1992 -> 0.1992
+Slow tone amplitude remains within tolerance
+Slow bass 82.4 speed 0.080 pitch 2.0 amplitude 0.2006 -> 0.2006
+Slow tone amplitude remains within tolerance
+Slow bass 110.0 speed 0.025 pitch 0.5 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Slow bass 110.0 speed 0.025 pitch 1.0 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Slow bass 110.0 speed 0.025 pitch 2.0 amplitude 0.2000 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 110.0 speed 0.080 pitch 0.5 amplitude 0.2003 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 110.0 speed 0.080 pitch 1.0 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Slow bass 110.0 speed 0.080 pitch 2.0 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Slow bass 220.0 speed 0.025 pitch 0.5 amplitude 0.1996 -> 0.1996
+Slow tone amplitude remains within tolerance
+Slow bass 220.0 speed 0.025 pitch 1.0 amplitude 0.2000 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 220.0 speed 0.025 pitch 2.0 amplitude 0.1999 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 220.0 speed 0.080 pitch 0.5 amplitude 0.2000 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 220.0 speed 0.080 pitch 1.0 amplitude 0.1999 -> 0.1999
+Slow tone amplitude remains within tolerance
+Slow bass 220.0 speed 0.080 pitch 2.0 amplitude 0.2000 -> 0.2000
+Slow tone amplitude remains within tolerance
+Moving 0.025 weighted distance 9.612 -> 9.508 ms; outside 0.2914 -> 0.2064
+Moving 0.08 weighted distance 9.414 -> 8.871 ms; outside 0.2712 -> 0.1734
+Moving 0.5 weighted distance 9.204 -> 9.204 ms; outside 0.1990 -> 0.1990
+Moving -0.5 weighted distance 8.469 -> 8.469 ms; outside 0.2440 -> 0.2440
+Moving -1 weighted distance 0.000 -> 0.000 ms; outside 0.0000 -> 0.0000

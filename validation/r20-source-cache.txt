@@ -1,0 +1,9 @@
+Native stereo sample allocated
+Native rate requires no cache
+Original R2 host-rate mono cache prepared
+Cached PCM equals R2 cubic conversion
+Cache memory is counted
+Repeated preparation does not allocate
+Two host rates keep immutable buffers
+Ordinary playback preserves native stereo
+Cache memory released with sample

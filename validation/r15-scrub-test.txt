@@ -1,0 +1,27 @@
+Rate 0.000: 220 Hz amplitude 0.200000, RMS 0.141421, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate 0.025: 220 Hz amplitude 0.200002, RMS 0.141423, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate 0.080: 220 Hz amplitude 0.199948, RMS 0.141433, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate 0.250: 220 Hz amplitude 0.199996, RMS 0.141421, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate 0.500: 220 Hz amplitude 0.199998, RMS 0.141422, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate 1.000: 220 Hz amplitude 0.200000, RMS 0.141421, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate -0.500: 220 Hz amplitude 0.199991, RMS 0.141423, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Rate -1.000: 220 Hz amplitude 0.200000, RMS 0.141421, stereo ratio error 0.000000000
+Neutral pitch and shared stereo alignment
+Pitch ratio 0.50: target amplitude 0.199959
+Pitch control independent of cursor speed
+Pitch ratio 2.00: target amplitude 0.199991
+Pitch control independent of cursor speed
+Unity max PCM error 0.000000000
+Unity-speed neutral pitch retains PCM exactly
+Stationary hold remains local on a 75 ms silent region
+Speech fixture available
+Speech fixture loaded
+Speech motion/hold RMS 0.055020
+Quantized mouse motion, hold, reverse and sample-rate mismatch produce finite audio

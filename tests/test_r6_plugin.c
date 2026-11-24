@@ -1,0 +1,8 @@
+/* Native test of the VST callback and reset-lock behavior. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "../src/plugin.c"
+static Plugin p;static float l[128],r[128],ol[128],orr[128];
+static void check(int ok,const char*s){if(!ok){fprintf(stderr,"FAIL: %s\n",s);exit(1);}puts(s);}
+int main(void){float*in[2]={l,r},*out[2]={ol,orr};p.effect.object=&p;p.sampleRate=48000;p.params[0]=p.params[1]=.5f;p.params[2]=1;p.limiterGain=1;p.wpos=128;for(int i=0;i<128;i++){l[i]=.2f;r[i]=.1f;p.ring[i*2]=.2f;p.ring[i*2+1]=.3f;}p.ring[64*2]=2.f;process_replacing(&p.effect,in,out,128);check(fabs(ol[0]-.4)<1e-6&&fabs(ol[64])<=.951&&p.rpos==128,"Classic limiter and stereo ring consumption");p.rpos=0;p.limiterGain=1;p.params[3]=1;process_replacing(&p.effect,in,out,128);check(fabs(ol[64])<=.951&&ol[0]<.2&&fabs(ol[0]-ol[127])<1e-5,"Optional block-peak limiter anticipates peak");p.rpos=0;p.limiterGain=1;p.params[3]=0;p.ringResetLock=1;process_replacing(&p.effect,in,out,128);check(p.rpos==0&&p.ringResetLock==1&&fabs(ol[0]-.2)<1e-6&&fabs(orr[0]-.1)<1e-6,"Reset contention preserves microphone and does not consume ring");p.ringResetLock=0;reset_ring_idle(&p,1);check(!p.rpos&&!p.wpos&&p.boardIdle&&p.ringResetLock==0,"Ring reset completes consistently");p.boardIdle=0;p.rpos=0;p.wpos=128;p.rateEpoch=0;p.ringEpoch=0;dispatch(&p.effect,effSetSampleRate,0,0,0,96000.f);check(p.rateEpoch==1&&p.sampleRate==96000,"Rate change increments ring epoch");process_replacing(&p.effect,in,out,128);check(p.rpos==0&&fabs(ol[0]-.2)<1e-6,"Old-rate buffered audio never consumed");check(r7_target_base(&p)==960,"Adaptive buffering scales to sample rate");puts("PASS R6/R7 plugin");return 0;}

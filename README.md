@@ -1,50 +1,42 @@
-# APO Soundboard — Scratch Edition v1.0.0
+# APO Soundboard — Scratch Edition v1.1
 
-High-fidelity **Windows x64 VST2** soundboard for Equalizer APO, specifically intended for the microphone capture chain. This is the final high-fidelity edition based directly on the supplied Scratch Edition **v0.9.10** source. The low-end/lightweight v0.9.0 edition remains entirely separate.
+A Windows x64 VST2 soundboard for Equalizer APO's microphone capture chain. It injects triggered audio into the processed microphone stream without requiring a virtual audio cable. The controller and VST communicate over a local named pipe.
 
-**Status: final v1.0.0 — Windows-tested and [published](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0).** The lightweight edition stays on v0.9.0 and is not replaced.
+The lightweight edition remains separate on [`main`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/main). For Windows binaries, see [GitHub Releases](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases). Use the Scratch Edition v1.1 package when published; older releases are not interchangeable with the lightweight edition.
 
-## New in v1.0.0
+## Features
 
-- **Official Windows app icon:** the approved cyan waveform with red scrub cursor is embedded as multi-size native RT_ICON / RT_GROUP_ICON resources in the **controller EXE**. The actual window class and running window receive separate small/large icons for the title bar, taskbar and Alt+Tab. The icon also appears in Explorer for the EXE. `AppIcon.png` and `AppIcon.ico` are included.
-- **File identity:** both EXE and DLL have Windows VERSIONINFO metadata identifying version `1.0.0.0` and the Scratch Edition.
-- **Monitor resilience:** if the WinMM playback device stops accepting writes, local monitoring is disabled and the controller shows a device-disconnected error instead of repeatedly writing. This does **not** stop the VST microphone injection. The existing WASAPI failure and recovery paths are preserved.
-- **Diagnostics clarity:** host ring underruns, host output clipped frames, local monitor underruns/overruns, and playback-device errors are identified separately.
-- **UI consistency:** changing the waveform editing mode immediately refreshes selected-pad information, file info and waveform display; the working Light/Dark appearance and Diagnostics layout remain.
-- **Build separation:** VST DLL and controller both report `BUILD_VERSION=100000`, communicate over the private Scratch `_v10` pipe, and retain the Scratch-only configuration format. Do **not** mix with previous Scratch executables.
-- **DSP unchanged:** `src/scratch_dsp.h` is **byte-for-byte identical** to v0.9.10. No alteration to the approved full-spectrum sound quality, scratch synthesis, Pitch, or Auto Sweep.
-
-## Retained Scrub behavior
-
-- 16 customizable sound pads, per-pad hotkeys, live volume/pitch, Auto Sweep and optional local monitoring.
-- **Select Range** edits playback range; **Scrub** controls the high-fidelity waveform.
-- In **Scrub**, left mouse down immediately takes over the selected pad, even if it was playing.
-- Drag right/left to scrub forward/backward; hold still to sustain/freeze the sound.
-- Release the left mouse button to pause at the released cursor position.
-- **Play/Pause** and **Spacebar** resume/pause from the saved position, **Stop** resets the selected pad.
-- Spacebar toggles **only** on Soundboard → Scrub with controller focus and without an active text/numeric/hotkey edit; other pads are unaffected.
-- Clear Playing/Scrubbing/Holding/Paused waveform states, mouse-position retention and short transition fades.
-- No duplicate playback from merely entering Scrub; v0.9.9's feedback/harsh buzz is fixed as of v0.9.10 and retained.
+- 32 customizable pads across two pages, global hotkeys, selected-pad playback, Stop All and board mute.
+- Select Range and Scrub modes, forward/reverse scrubbing, Silent and Continuous stationary behavior, and pitch adjustment.
+- Original R2 OpenPanel FFT/WSOLA reconstruction, with band-limited 64-tap sinc pitch interpolation at non-neutral pitch. Neutral-pitch reconstruction follows the original path.
+- Per-pad output volume, independent local monitoring, optional linked gains and extended volume up to 400% after approval.
+- Per-pad reverb, echo, effect presets and Auto Sweep; stereo ordinary playback.
+- Light/dark themes, adjustable typography, system tray, configuration backup/recovery and diagnostic information.
 
 ## Installation
 
-1. Back up your existing Scratch Edition settings if desired, and **fully close the old controller**.
-2. Extract this complete folder to a location the VST host and controller can read.
-3. In **Equalizer APO Configuration Editor**, add/select a VST on the **microphone/capture** device chain and point it to `APOSoundboardScratch_v1.0.0.dll`.
-4. Keep `APOSoundboardScratchController.exe` beside the DLL and use the panel/open-controller command or start it directly.
-5. Test loaded pads, hotkeys, Scrub → release → Play/Space, monitor ON/OFF, and the microphone capture path on your Windows system.
-6. Old versions use a different communication pipe: use the matching v1.0.0 EXE/DLL together.
+1. Completely exit the old controller (including the tray process) and back up the Scratch configuration.
+2. Extract the entire v1.1 ZIP into a new folder accessible to Equalizer APO.
+3. In Equalizer APO Configuration Editor, select the microphone/capture chain. Replace the old VST entry with `APOSoundboardScratch_v1.1.dll` and apply the configuration.
+4. Keep `APOSoundboardScratchController.exe` beside the DLL. Use Open Panel or start the controller directly.
+5. Test pad playback, microphone output, local monitor and hotkeys before relying on the new build. Restart Windows if the audio engine is still loading the previous DLL.
 
-This package contains the Windows binaries, C sources, icon PNG/ICO/native resources, tests, build instructions and checksums. The icon in this package is **embedded in the EXE**; you do not need the loose ICO file at runtime.
+Use the matching v1.1 DLL and controller. The controller also accepts known-compatible protocol-v3 Scratch builds 100218–100220 to avoid false protocol mismatches; this is not permission to mix unrelated releases. Do not run multiple controllers.
 
-## Validation / limits
+## Scrubbing and controls
 
-- Windows x64 freestanding C binaries cross-compiled with Clang/LLD and inspected as PE32+; VST `VSTPluginMain` export verified.
-- Ten supplied offline test executables passed: eight full DSP suites, repeated scrub re-entry, and multi-pad transport. `test_scratch` ran its available checks but skipped an optional external `.raw` voice fixture not supplied here.
-- Clang static analyzer returned no issues for controller and DLL source.
-- App icon RT_GROUP_ICON (ID 101) and VERSIONINFO checked in the PE resource directory; full `.ico` includes sizes 16, 24, 32, 48, 64, 128, and 256 pixels.
-- **Windows user acceptance:** The maintainer confirmed on 2026-10-23 that v1.0.0 runs correctly on their Windows setup. This validates their normal workflow, not every device, host version, driver or edge case.
-- **Not independently verified on Windows:** complete device unplug/replug matrix, DPI configurations, malware scanning and all driver combinations. The offline build and static-analysis results remain as recorded above.
-- **Release status:** v1.0.0 is the final Scratch Edition and is [published on GitHub](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0) as the current Latest release. The tested release tag points to the final source commit `2ae349f`.
+In Scrub mode, mouse-down takes over the selected pad. Move left/right for reverse/forward scrubbing; the pitch control is independent of cursor motion. In **Silent**, the dry scrub signal fades out after movement stops; in **Continuous**, the engine sustains audio while holding. Existing effect and output-buffer tails can remain after motion stops. The switch is grey on the left, blue on the right and disabled in Select Range mode. Release pauses at the cursor; Play or Space (when focused on Scrub, outside text/numeric input) resumes. Stop resets the selected pad.
 
-See `BUILDING.txt`, `TESTING.txt`, `AUDIT.txt`, and `CHANGELOG.md`. This project is independent of Equalizer APO; source is MIT licensed.
+Scrub-associated playback uses the original R2 mono reconstruction and source conversion. Normal pad playback retains stereo. The original reconstruction can include nearby source audio and may produce artifacts at extreme stretch ratios. No claim of lossless arbitrary stretching or dedicated formant correction is made.
+
+Output volume is per pad. When **Link volumes** is off, monitor volume is an independent global master; when enabled, each playing pad uses its own output level for both paths. Selecting a different pad changes the displayed controls without changing other pads' audio. Both gain paths support extended volume after the shared warning is approved; the limiter can reduce clipping but does not eliminate excessive loudness. Use a safe listening level.
+
+Tools → Appearance → Font sizes (live) provides six independently adjustable 8–20 pt settings. The default font is Segoe UI Variable, with 11 pt general text, 10 pt pad names/hotkeys and dropdowns, 12 pt values, 14 pt dialog headings and 10 pt dialog text. Native Windows font rendering and DPI behavior depend on the system.
+
+## Build and testing
+
+Source is freestanding C, built with Clang and LLD. See [BUILDING.txt](BUILDING.txt), [TESTING.txt](TESTING.txt) and [VALIDATION.md](VALIDATION.md). Internal build 110000, Windows file version 1.1.0.0, IPC protocol v3. Configuration remains `config_scratch_v12.bin`.
+
+Native Windows GUI, Equalizer APO runtime and comparative listening need local verification. The stock Equalizer APO Open Panel intermediate dialog is unchanged; the optional host patch in `host-integration/` is not built or bundled as a host replacement. The binaries are unsigned.
+
+The release ZIP includes a SHA-256 manifest for its packaged files; the source branch omits the built binaries. See [CHANGELOG.md](CHANGELOG.md) and [RELEASING.md](RELEASING.md). MIT licensed; independent of Equalizer APO. This project uses both hand-written code and AI assistance for prototyping, debugging and testing.

@@ -1,0 +1,4 @@
+PASS: R20 source/build identifiers, guarded host launch, 43 C tests, host patch and asInvoker resource
+Original R2 header and R19 effects header verified byte-for-byte.
+APOSoundboardScratchController.exe: PE32+ executable for MS Windows 6.00 (GUI), x86-64, 5 sections
+APOSoundboardScratch_v1.0.2.dll:    PE32+ executable for MS Windows 6.00 (DLL), x86-64, 5 sections

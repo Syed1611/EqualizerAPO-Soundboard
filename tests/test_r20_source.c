@@ -1,0 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "../src/controller.c"
+static void* WL_WINAPI heap(void){return (void*)1;}
+static void* WL_WINAPI alloc(void*h,WL_DWORD f,WL_SIZE_T n){(void)h;return f&8?calloc(1,n):malloc(n);}
+static WL_BOOL WL_WINAPI freem(void*h,WL_DWORD f,void*p){(void)h;(void)f;free(p);return 1;}
+static void ck(int c,const char*s){if(!c){fprintf(stderr,"FAIL %s\n",s);exit(1);}puts(s);}
+int main(void){g_api.GetProcessHeap=heap;g_api.HeapAlloc=alloc;g_api.HeapFree=freem;float*mono=malloc(44100*sizeof(float));float*side=malloc(44100*sizeof(float));for(int i=0;i<44100;i++){mono[i]=.25f*sin(i*.03);side[i]=mono[i]*.5f;}Sample*s=sample_create(mono,side,44100,44100,0);ck(s!=0,"Native stereo sample allocated");WL_I64 original=g_totalSampleBytes;r20_prepare_pcm(s,44100);ck(g_totalSampleBytes==original&&!s->r20Pcm,"Native rate requires no cache");r20_prepare_pcm(s,48000);R20Pcm*b=r20_find_pcm(s,48000);ck(b&&b->frames==48000&&b->rate==48000,"Original R2 host-rate mono cache prepared");float*ref=0;WL_U64 n=0;ck(r20_r2_resample_buffer(mono,44100,44100,48000,&ref,&n,0)==1&&n==b->frames&&r7_equal_bytes(ref,b->mono,n*sizeof(float)),"Cached PCM equals R2 cubic conversion");free(ref);WL_I64 bytes=g_totalSampleBytes;ck(bytes==original+48000*sizeof(float)+sizeof(*b),"Cache memory is counted");r20_prepare_pcm(s,48000);ck(bytes==g_totalSampleBytes&&r20_find_pcm(s,48000)==b,"Repeated preparation does not allocate");r20_prepare_pcm(s,96000);ck(r20_find_pcm(s,96000)!=0&&r20_find_pcm(s,48000)==b,"Two host rates keep immutable buffers");ck(s->mono==mono&&s->side==side&&s->frames==44100&&s->sampleRate==44100,"Ordinary playback preserves native stereo");sample_release(s);drain_retired_samples();ck(g_totalSampleBytes==0,"Cache memory released with sample");return 0;}

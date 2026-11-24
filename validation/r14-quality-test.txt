@@ -1,0 +1,27 @@
+Requested font defaults
+Font preference valid
+Independent font size round trip
+Independent font size round trip
+Independent font size round trip
+Independent font size round trip
+Independent font size round trip
+Independent font size round trip
+Reject invalid font extension
+Single R14 engine
+speed 0.08 R9 RMS 0.14001 amp 0.19800 R14 RMS 0.14138 amp 0.19516
+Moving tone amplitude bounded
+speed 0.35 R9 RMS 0.14138 amp 0.19950 R14 RMS 0.14130 amp 0.19692
+Moving tone amplitude bounded
+speed 0.50 R9 RMS 0.14140 amp 0.19992 R14 RMS 0.14139 amp 0.19988
+Moving tone amplitude bounded
+speed -0.50 R9 RMS 0.14144 amp 0.19903 R14 RMS 0.14145 amp 0.19940
+Moving tone amplitude bounded
+hold RMS R13 0.139741 R14 0.139662
+Hold retains sustained tone
+neighbor-only RMS R9 0.068506 R14 0.015970
+Reduced neighboring audio in hold
+Controlled onset: 6 transient detections, 1536 samples with transient state
+Adaptive transient branch exercised
+Synthesized speech fixture
+R14 speech RMS 0.137037, detected transients 0
+Speech scrub across live motion and hold at 44.1/48 kHz

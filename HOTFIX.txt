@@ -1,0 +1,5 @@
+v1.1 IPC compatibility
+
+Protocol v3 and the Scratch_v12s endpoint are unchanged. The controller accepts only known-compatible builds 100218, 100219, 100220 and 110000. The ACK echoes the accepted DLL build. Rejected peers cannot invalidate an already accepted connection; diagnostics report rejected protocol, build, rate and channels. Use both matching v1.1 binaries.
+
+If a mismatch appears, close the tray controller completely, extract to a new folder, replace the existing VST entry in Equalizer APO (do not add a second entry), apply and start the matching controller. Restart Windows if an old DLL remains loaded. Copy the detailed rejection message if the error persists.

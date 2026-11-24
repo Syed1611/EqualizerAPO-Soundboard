@@ -1,0 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "../src/controller.c"
+static float x[96000],side[96000];
+static void ck(int c,const char*s){if(!c){fprintf(stderr,"FAIL %s\n",s);exit(1);}puts(s);}
+static double tone(double speed,double pitch,double *rms,double *stereoError){ApoScratchStretch*v=calloc(1,sizeof(*v));double a=0,b=0,e=0,err=0;for(int i=0;i<24000;i++){float s=0;float q=r15_render_pair(v,x,side,96000,48000,48000,48000+speed*i,speed,pitch,&s);if(!isfinite(q)||!isfinite(s))exit(2);double z=fabs(s-.5*q);if(z>err)err=z;if(i>=12000){double p=2*3.141592653589793*220*pitch*i/48000;a+=q*cos(p);b+=q*sin(p);e+=q*q;}}free(v);*rms=sqrt(e/12000);*stereoError=err;return 2*hypot(a,b)/12000;}
+int main(){for(int i=0;i<96000;i++){x[i]=.2*sin(2*3.141592653589793*220*i/48000);side[i]=.5*x[i];}double speeds[]={0,.025,.08,.25,.5,1.,-.5,-1.};for(int i=0;i<8;i++){double rms,err,amp=tone(speeds[i],1,&rms,&err);printf("Rate %.3f: 220 Hz amplitude %.6f, RMS %.6f, stereo ratio error %.9f\n",speeds[i],amp,rms,err);ck(amp>.18&&amp<.22&&err<1e-6,"Neutral pitch and shared stereo alignment");}for(int i=0;i<2;i++){double p=i?2.:.5,r,e,a=tone(.08,p,&r,&e);printf("Pitch ratio %.2f: target amplitude %.6f\n",p,a);ck(a>.16&&a<.23,"Pitch control independent of cursor speed");}
+ /* Exact unity PCM playback for ordinary coherent movement. */
+ ApoScratchStretch*v=calloc(1,sizeof(*v));double max=0;for(int i=0;i<12000;i++){float z=r9_render(v,x,96000,48000,48000,30000+i,1.,1.,9);double d=fabs(z-x[30000+i]);if(d>max)max=d;}printf("Unity max PCM error %.9f\n",max);ck(max<1e-6,"Unity-speed neutral pitch retains PCM exactly");free(v);
+ /* A silent local neighborhood must not pull in distant audio. */
+ for(int i=0;i<96000;i++)x[i]=abs(i-48000)>1800?.2f*sin(i*.1):0.f;v=calloc(1,sizeof(*v));double e=0;for(int i=0;i<24000;i++){float q=r9_render(v,x,96000,48000,48000,48000,0.,1.,9);e+=q*q;}free(v);ck(e<1e-10,"Stationary hold remains local on a 75 ms silent region");
+ FILE*f=fopen("tests/reference/synthetic_speech_44100.f32","rb");ck(f!=0,"Speech fixture available");fseek(f,0,SEEK_END);long n=ftell(f)/4;rewind(f);float *pcm=malloc(n*4);ck(fread(pcm,4,n,f)==(size_t)n,"Speech fixture loaded");fclose(f);v=calloc(1,sizeof(*v));double cursor=n*.25;double rates[]={.025,.25,0,-.5,1.};e=0;for(int i=0;i<48000;i++){double speed=rates[i/9600];cursor+=speed*44100./48000.;/* quantized pointer events approximately 60 Hz */double pointer=cursor-speed*(i%800)*44100./48000.;float q=r9_render(v,pcm,n,44100,48000,pointer,speed,1,9);if(!isfinite(q)||fabs(q)>1.5)exit(3);e+=q*q;}printf("Speech motion/hold RMS %.6f\n",sqrt(e/48000));ck(e>.001,"Quantized mouse motion, hold, reverse and sample-rate mismatch produce finite audio");free(v);free(pcm);return 0;}

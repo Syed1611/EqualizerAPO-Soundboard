@@ -1,29 +1,13 @@
-# Scratch Edition changelog
+# Changelog
 
-## v1.0.0 — Application Branding and Stability Polish
+## v1.1 — Scratch Edition
 
-- Embedded waveform/red-cursor logo as multiple native Win32 icon resources in the controller EXE.
-- Assigned icon to the registered window class and running window for small/large UI and Explorer.
-- Added VERSIONINFO `1.0.0.0` to DLL and EXE.
-- Improved WinMM monitor-device write failure handling: monitoring disables cleanly and reports a recoverable device error; microphone injection remains active.
-- Clarified independent VST ring underrun, host output clip, and monitor device diagnostics.
-- Refreshes waveform and selected-pad status immediately when changing mode.
-- Locked both binaries to build 100000, `Scratch_v10` pipe and matching source.
-- Preserved all of v0.9.10 Scrub controls and bit-identical full-spectrum spectral DSP.
-- Offline tests and Win64 cross-compilation passed. The maintainer confirmed v1.0.0 works on their Windows setup (2026-10-23). This is not broad device/driver certification.
-- v1.0.0 approved as the **final Scratch Edition**, not a prerelease.
+- Consolidate the Scratch development work into the v1.1 release; leave the lightweight edition separate.
+- Restore the original R2 OpenPanel scrub path, including cursor handling, mono host-rate source conversion, FFT/WSOLA reconstruction, entry transition and release-to-pause.
+- Improve non-neutral scrub pitch with 64-tap band-limited sinc interpolation. Preserve neutral pitch.
+- Add Silent/Continuous hold behavior; grey Silent track, blue Continuous track, animated toggle. Align Select Range/Scrub with selected-pad info at default font sizes.
+- Retain two pages of pads, per-pad effects, independent monitor/output gains with linking, 400% approval, live adjustable typography, tray and configuration handling.
+- Preserve known-compatible protocol-v3 IPC handshake behavior and detailed mismatch diagnostics.
 
-## v0.9.10 — Repeated Scrub Audio Hotfix
+The source history and regression references are retained. No intermediate development revision is being published as part of v1.1.
 
-- Corrected mismatched scratch-entry fade duration and negative blend weights.
-- Removed previous-output feedback from scrub entry; restored decoded PCM at click.
-- Covered repeated left-click/drag/release/Play interactions with regression tests.
-
-## v0.9.9 — Scrub Playback Controls
-
-- Renamed the waveform mode to Scrub, introduced click takeover, pause-on-release, Play/Pause/Stop and Scrub-only selected-pad Spacebar.
-- Superseded by v0.9.10 due to an audio entry fade regression.
-
-## v0.9.8 — Prior High-Fidelity Baseline
-
-- The full-spectrum spectral scratch engine and Windows-style UI refinements are retained through v1.0.0.
