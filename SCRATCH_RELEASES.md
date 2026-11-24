@@ -1,8 +1,10 @@
 # Scratch Edition releases
 
-Scratch Edition offers a final high-fidelity release and eight earlier published versions. For lower-end systems use the separate [Lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
+**v1.1 — stable:** source prepared on the `scratch` branch. The maintainer will publish the matching `APOSoundboard-ScratchEdition-v1.1-stable-x64.zip` on [GitHub Releases](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases) after Windows acceptance. See [CHANGELOG.md](CHANGELOG.md) and [RELEASING.md](RELEASING.md). No intermediate v1.0.2 revision is being published for this release.
 
-**Final high-fidelity version:** **[v1.0.0 — Final Release](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0)**, published October 23, 2026, after maintainer testing on Windows. [Download the matched Windows x64 ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v1.0.0/APOSoundboard-ScratchEdition-v1.0.0-x64.zip). The release tag `scratch-v1.0.0` points to the matching final source snapshot (`2ae349f`).
+Scratch Edition v1.1 is the stable source line, with earlier published versions retained for reference. For lower-end systems use the separate [Lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
+
+**Previous published stable version:** **[v1.0.0 — Final Release](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0)**, published October 23, 2026, after maintainer testing on Windows. [Download the matched Windows x64 ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v1.0.0/APOSoundboard-ScratchEdition-v1.0.0-x64.zip). The release tag `scratch-v1.0.0` points to the matching final source snapshot (`2ae349f`).
 
 **Previous stable Scratch Edition:** **[v0.9.8 — UI Polish](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8)** ([direct ZIP](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/download/scratch-v0.9.8/APOSoundboard-ScratchEdition-v0.9.8-x64.zip)). This was a working, accepted release before the v1.0.0 playback-control improvements. Its original tag, download, and regular-release status are preserved; it is not considered broken.
 
@@ -34,7 +36,7 @@ eb6c41be50bdd5ba0d895da8172d0de20c4d35de9e1c61996d8099f4fbab86ae  APOSoundboard-
 
 ## Historical source and tags
 
-The version-specific source snapshots are preserved by their published `scratch-v0.9.1`–`scratch-v0.9.8` tags. Use the GitHub tag selector or the source commit links in the table above. Ongoing Scratch development remains on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze).
+The version-specific source snapshots are preserved by their published `scratch-v0.9.1`–`scratch-v0.9.8` tags. Use the GitHub tag selector or the source commit links in the table above. Stable Scratch source is now on [`scratch`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/scratch). The original development branch and historical tags remain unchanged.
 
 **Tag targets verified (2026-10-23):** All eight `scratch-v0.9.1`–`scratch-v0.9.8` Git tags now resolve to their correct Scratch-version source commits, exactly as listed above. GitHub's automatically generated **Source code** ZIP/TAR downloads therefore follow the appropriate version. For installation, use the **attached release ZIP** containing the matched Windows x64 DLL and controller, not an auto-generated source archive. The attached ZIPs and their published checksums are unchanged. See [RELEASING.md](RELEASING.md) for ongoing maintenance.
 
@@ -48,5 +50,5 @@ GitHub Releases are repository-wide, so both editions share one release list and
 | v0.9.10 | Local hotfix; optional historical experiment | Fixed the v0.9.9 repeated-drag buzz by correcting the scrub-entry fade and removing previous-output feedback. Preserved the high-fidelity DSP and all new Scrub controls. |
 | v1.0.0 | **Published final** ([Release](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v1.0.0)) | Added the native Windows logo/icon, executable and DLL version metadata, monitor-device resilience, clearer diagnostics, UI consistency, and final polish. Full v0.9.10 Scrub audio and controls retained. Accepted on the maintainer's Windows system. |
 
-The eight earlier published Scratch builds include **seven prereleases (v0.9.1–v0.9.7)** and **one previous stable regular release (v0.9.8)**. Each retains its original attached ZIP and matching historical source tag. **v0.9.9 should not be offered as a recommended downloadable build** because its entry-fade feedback regression could cause harsh or excessive audio output. **v0.9.10 may be archived as an optional experimental prerelease**, but only with its own matching source snapshot and versioned ZIP. Never point a `scratch-v0.9.10` tag at v1.0.0 source, or users downloading GitHub-generated source archives would receive the wrong code.
+The eight earlier published Scratch builds include **seven prereleases (v0.9.1–v0.9.7)** and **one previous stable regular release (v0.9.8)**. Each retains its original attached ZIP and matching historical source tag. **v0.9.9 should not be offered as a recommended downloadable build** because its entry-fade feedback regression could cause harsh or excessive audio output. No further intermediate development releases are planned. Never point a `scratch-v0.9.10` tag at v1.0.0 source, or users downloading GitHub-generated source archives would receive the wrong code.
 
