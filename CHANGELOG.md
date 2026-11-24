@@ -1,5 +1,7 @@
 # Changelog
 
+This file covers the lightweight edition. Scratch Edition v1.1 has its own [changelog](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/scratch/CHANGELOG.md); the lightweight version remains v0.9.0.
+
 All notable project changes are recorded here. Experimental and superseded releases are kept in the history instead of being silently removed.
 
 ## [0.9.0] - Dark Mode & UI Polish

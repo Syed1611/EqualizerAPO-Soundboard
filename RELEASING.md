@@ -43,15 +43,10 @@ Close the old controller and applications actively using the microphone. Extract
 
 OGG/Opus support still depends on Windows Media Foundation codecs. Native Ogg Vorbis and Opus decoders have **not** been bundled. The v0.9.0 appearance change does not alter the soundboard processing engine.
 
-## Published Scratch Edition channel
+## Scratch Edition channel
 
-Eight Scratch Edition releases ([v0.9.1–v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/SCRATCH_RELEASES.md)) are published with matching Windows x64 ZIP attachments. Their Git tags now resolve to the correct historical Scratch source commits. The latest Scratch source is on [`experimental/scratch-freeze`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/experimental/scratch-freeze); all eight historical source snapshots are preserved by their corresponding release tags.
+The stable Scratch v1.1 source is on [`scratch`](https://github.com/Syed1611/EqualizerAPO-Soundboard/tree/scratch), separate from lightweight `main`. See the [Scratch release guide](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/scratch/RELEASING.md) and [release history](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/scratch/SCRATCH_RELEASES.md).
 
-- [Download Scratch Edition v0.9.8](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/scratch-v0.9.8)
-- [Download lightweight v0.9.0](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9)
+For the forthcoming release, choose `scratch-v1.1` as the tag, target the matching v1.1 source commit on `scratch`, and attach `APOSoundboard-ScratchEdition-v1.1-stable-x64.zip`. Do not tag `main` for Scratch. Publish only after local Windows/Equalizer APO acceptance. Previous published builds and tags remain unchanged; no intermediate v1.0.2 development revisions are being published.
 
-For Windows installation use the release's **attached ZIP**, not GitHub's automatically generated source-only ZIP.
-
-GitHub shows a **single repository-wide Latest release**, not a separate Latest for each branch. At the time of audit, `/releases/latest` resolves to the lightweight `v0.9` release. Both branch READMEs link their respective edition explicitly.
-
-Release and source maintenance guidance: [Scratch release guide](https://github.com/Syed1611/EqualizerAPO-Soundboard/blob/experimental/scratch-freeze/RELEASING.md).
+GitHub's Latest label is repository-wide; use edition-specific release links where available. The lightweight v0.9.0 download remains [here](https://github.com/Syed1611/EqualizerAPO-Soundboard/releases/tag/v0.9).
